@@ -1,18 +1,8 @@
-/*
- * 컴포넌트 트리
- *
- * App
- * ├── Header
- * └── MovieList
- *     ├── MovieCard
- *     │   └── MovieTitle
- *     └── MovieCard
- *         └── MovieTitle
- *
- * - App: Header와 MovieList의 부모
- * - MovieList: App의 자식이자 MovieCard의 부모
- * - MovieCard: MovieList의 자식이자 MovieTitle의 부모
- */
+interface MovieCardProps {
+  title: string;
+  releaseDate: string;
+  isBookmarked: boolean;
+}
 
 function Header() {
   return (
@@ -22,15 +12,12 @@ function Header() {
   );
 }
 
-function MovieTitle() {
-  return <h2>오디세이</h2>;
-}
-
-function MovieCard() {
+function MovieCard({ title, releaseDate, isBookmarked }: MovieCardProps) {
   return (
     <article>
-      <MovieTitle />
-      <p>2026.08.05</p>
+      <h2>{title}</h2>
+      <p>{releaseDate}</p>
+      <p>{isBookmarked ? "북마크됨" : "북마크 안 됨"}</p>
     </article>
   );
 }
@@ -38,8 +25,21 @@ function MovieCard() {
 function MovieList() {
   return (
     <section>
-      <MovieCard />
-      <MovieCard />
+      <MovieCard
+        title="오디세이"
+        releaseDate="2026.08.05"
+        isBookmarked={true}
+      />
+      <MovieCard
+        title="토이 스토리 5"
+        releaseDate="2026.06.17"
+        isBookmarked={false}
+      />
+      <MovieCard
+        title="인터스텔라"
+        releaseDate="2014.11.06"
+        isBookmarked={true}
+      />
     </section>
   );
 }
