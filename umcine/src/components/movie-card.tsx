@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import type { Movie } from "../types/movie";
 import "./movie-card.css";
 
@@ -14,7 +15,16 @@ export default function MovieCard({ movie, onToggleBookmark }: MovieCardProps) {
   return (
     <li className="movie-card">
       <div className="movie-card__poster">
-        <img src={movie.posterPath} alt={`${movie.title} 포스터`} />
+        {/* 제목 링크와 목적지가 같아서 키보드 탭 순서와 스크린 리더에서는 제외해요 */}
+        <Link
+          className="movie-card__poster-link"
+          to="/movies/$movieId"
+          params={{ movieId: String(movie.id) }}
+          tabIndex={-1}
+          aria-hidden="true"
+        >
+          <img src={movie.posterPath} alt="" />
+        </Link>
         <button
           type="button"
           className="movie-card__bookmark"
@@ -25,7 +35,11 @@ export default function MovieCard({ movie, onToggleBookmark }: MovieCardProps) {
           <img src={bookmarkIcon} alt="" />
         </button>
       </div>
-      <h2 className="movie-card__title">{movie.title}</h2>
+      <h2 className="movie-card__title">
+        <Link to="/movies/$movieId" params={{ movieId: String(movie.id) }}>
+          {movie.title}
+        </Link>
+      </h2>
       <p className="movie-card__date">{movie.releaseDate}</p>
     </li>
   );
