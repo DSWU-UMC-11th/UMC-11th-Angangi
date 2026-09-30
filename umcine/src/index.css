@@ -1,0 +1,82 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+
+:root {
+  /* Figma Color 토큰 */
+  --color-bg-surface: #ffffff;
+  --color-bg-page: #f6f7f9;
+  --color-text-primary: #17191e;
+  --color-text-secondary: #606774;
+  --color-text-tertiary: #969da8;
+  --color-border-default: #e3e6eb;
+  --color-action-primary: #2563eb;
+  --color-action-hover: #1d4ed8;
+  --color-action-pressed: #1748ad;
+  --color-action-disabled: #d9e5ff;
+  --color-danger-default: #d92d20;
+
+  --content-width: 1280px;
+  --page-gutter: 80px;
+
+  color-scheme: light;
+  font-family:
+    "Pretendard", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--color-text-primary);
+  background: var(--color-bg-page);
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (max-width: 768px) {
+  :root {
+    --page-gutter: 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --page-gutter: 20px;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+h1,
+h2,
+p,
+ul {
+  margin: 0;
+  padding: 0;
+}
+
+ul {
+  list-style: none;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+img {
+  display: block;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.container {
+  width: 100%;
+  max-width: calc(var(--content-width) + var(--page-gutter) * 2);
+  margin: 0 auto;
+  padding-inline: var(--page-gutter);
+}
