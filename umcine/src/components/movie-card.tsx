@@ -31,7 +31,7 @@ export default function MovieCard({ movie, onToggleBookmark }: MovieCardProps) {
         <button
           type="button"
           className={cn(
-            "absolute top-3 right-3 flex size-8 items-center justify-center rounded-md border-[1.5px] p-0",
+            "absolute top-2 right-2 flex size-7 items-center justify-center rounded-md border-[1.5px] p-0 sm:top-3 sm:right-3 sm:size-8",
             movie.isBookmarked
               ? "border-(--color-action-primary) bg-(--color-action-primary) hover:border-(--color-action-hover) hover:bg-(--color-action-hover)"
               : "border-(--color-bg-surface) bg-[rgba(23,25,30,0.72)] hover:bg-(--color-text-primary)",
@@ -41,13 +41,13 @@ export default function MovieCard({ movie, onToggleBookmark }: MovieCardProps) {
           onClick={() => onToggleBookmark(movie.id)}
         >
           <img
-            className="size-[22px] brightness-0 invert"
+            className="size-5 brightness-0 invert sm:size-[22px]"
             src={bookmarkIcon}
             alt=""
           />
         </button>
       </div>
-      <h2 className="mt-3 truncate text-sm/[1.4] font-bold text-(--color-text-primary)">
+      <h2 className="mt-2 truncate text-[13px]/[1.4] font-bold text-(--color-text-primary) sm:mt-3 sm:text-sm/[1.4]">
         <Link
           className="hover:underline"
           to="/movies/$movieId"

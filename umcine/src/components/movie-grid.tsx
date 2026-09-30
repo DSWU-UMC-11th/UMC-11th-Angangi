@@ -16,8 +16,8 @@ export default function MovieGrid({ movies, onToggleBookmark }: MovieGridProps) 
   }
 
   return (
-    // 기존 CSS와 같은 너비에서 열 수가 바뀌도록 481px / 769px / 1201px 기준을 사용해요
-    <ul className="grid grid-cols-1 gap-x-4 gap-y-6 min-[481px]:grid-cols-2 min-[769px]:grid-cols-3 min-[769px]:gap-x-5 min-[1201px]:grid-cols-5">
+    // 모바일 2열 → sm 3열 → lg 4열 → xl 5열(Figma 데스크톱)
+    <ul className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 sm:gap-x-4 sm:gap-y-6 lg:grid-cols-4 lg:gap-x-5 xl:grid-cols-5">
       {movies.map((movie) => (
         <MovieCard
           key={movie.id}

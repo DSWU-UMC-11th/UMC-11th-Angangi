@@ -20,8 +20,8 @@ export function MovieListPage() {
   }
 
   return (
-    <main className="main container">
-      <h1 className="main__title">영화 목록</h1>
+    <main className="page-container flex-1 pt-8 pb-20">
+      <h1 className="mb-6 text-[28px] font-extrabold tracking-[-0.02em] min-[481px]:text-4xl">영화 목록</h1>
       <MovieGrid movies={movies} onToggleBookmark={handleToggleBookmark} />
       <Pagination
         currentPage={currentPage}

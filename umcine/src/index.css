@@ -42,46 +42,24 @@
   }
 }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
+/* margin, list-style, img display 등 기본 초기화는 Tailwind Preflight가 처리해요.
+   base 레이어 안에 두어야 Tailwind 유틸리티 class가 덮어쓸 수 있어요. */
+@layer base {
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+
+  #root {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
 }
 
-body {
-  margin: 0;
-}
-
-h1,
-h2,
-p,
-ul {
-  margin: 0;
-  padding: 0;
-}
-
-ul {
-  list-style: none;
-}
-
-button {
-  font: inherit;
-  cursor: pointer;
-}
-
-img {
-  display: block;
-}
-
-#root {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
-.container {
+/* Tailwind 내장 container 유틸리티와 겹치지 않도록 이름을 따로 지어요 */
+@utility page-container {
   width: 100%;
   max-width: calc(var(--content-width) + var(--page-gutter) * 2);
-  margin: 0 auto;
+  margin-inline: auto;
   padding-inline: var(--page-gutter);
 }
