@@ -1,4 +1,5 @@
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+@import "tailwindcss";
 
 :root {
   /* Figma Color 토큰 */
@@ -19,7 +20,11 @@
 
   color-scheme: light;
   font-family:
-    "Pretendard", system-ui, -apple-system, "Segoe UI", sans-serif;
+    "Pretendard",
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
   color: var(--color-text-primary);
   background: var(--color-bg-page);
   -webkit-font-smoothing: antialiased;
