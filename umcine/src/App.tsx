@@ -4,7 +4,7 @@ import Header from "./components/header";
 import MovieGrid from "./components/movie-grid";
 import Pagination from "./components/pagination";
 import { movies as initialMovies } from "./data/movies";
-import "./App.css";
+// import "./App.css";
 
 const TOTAL_PAGES = 5;
 
