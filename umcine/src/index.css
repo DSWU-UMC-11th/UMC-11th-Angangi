@@ -25,6 +25,18 @@
   -webkit-font-smoothing: antialiased;
 }
 
+@media (max-width: 768px) {
+  :root {
+    --page-gutter: 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --page-gutter: 20px;
+  }
+}
+
 *,
 *::before,
 *::after {
@@ -33,7 +45,6 @@
 
 body {
   margin: 0;
-  min-width: 1440px;
 }
 
 h1,

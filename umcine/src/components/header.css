@@ -100,3 +100,18 @@
 .header__login:active {
   background: var(--color-action-pressed);
 }
+
+@media (max-width: 480px) {
+  .header__inner {
+    flex-wrap: wrap;
+    height: auto;
+    padding-block: 16px;
+    row-gap: 12px;
+  }
+
+  .header__nav {
+    order: 1;
+    width: 100%;
+    margin-left: 0;
+  }
+}

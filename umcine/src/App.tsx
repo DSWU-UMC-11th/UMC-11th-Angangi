@@ -6,17 +6,11 @@ import Pagination from "./components/pagination";
 import { movies as initialMovies } from "./data/movies";
 import "./App.css";
 
-const MOVIES_PER_PAGE = 10;
+const TOTAL_PAGES = 5;
 
 export default function App() {
   const [movies, setMovies] = useState(initialMovies);
   const [currentPage, setCurrentPage] = useState(1);
-
-  const totalPages = Math.max(1, Math.ceil(movies.length / MOVIES_PER_PAGE));
-  const pageMovies = movies.slice(
-    (currentPage - 1) * MOVIES_PER_PAGE,
-    currentPage * MOVIES_PER_PAGE,
-  );
 
   function handleToggleBookmark(movieId: number) {
     setMovies((currentMovies) =>
@@ -33,10 +27,10 @@ export default function App() {
       <Header />
       <main className="main container">
         <h1 className="main__title">영화 목록</h1>
-        <MovieGrid movies={pageMovies} onToggleBookmark={handleToggleBookmark} />
+        <MovieGrid movies={movies} onToggleBookmark={handleToggleBookmark} />
         <Pagination
           currentPage={currentPage}
-          totalPages={totalPages}
+          totalPages={TOTAL_PAGES}
           onPageChange={setCurrentPage}
         />
       </main>
