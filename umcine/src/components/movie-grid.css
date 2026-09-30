@@ -1,0 +1,11 @@
+.movie-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 24px 20px;
+}
+
+.movie-grid__empty {
+  padding: 80px 0;
+  text-align: center;
+  color: var(--color-text-secondary);
+}

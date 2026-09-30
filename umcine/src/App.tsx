@@ -1,56 +1,22 @@
 import { useState } from "react";
+import Footer from "./components/footer";
+import Header from "./components/header";
+import MovieGrid from "./components/movie-grid";
+import Pagination from "./components/pagination";
+import { movies as initialMovies } from "./data/movies";
+import "./App.css";
 
-interface Movie {
-  id: number;
-  title: string;
-  releaseDate: string;
-  isBookmarked: boolean;
-}
-
-interface MovieCardProps {
-  movie: Movie;
-  onToggleBookmark: (movieId: number) => void;
-}
-
-const initialMovies: Movie[] = [
-  {
-    id: 1,
-    title: "오디세이",
-    releaseDate: "2026.08.05",
-    isBookmarked: true,
-  },
-  {
-    id: 2,
-    title: "토이 스토리 5",
-    releaseDate: "2026.06.17",
-    isBookmarked: false,
-  },
-  {
-    id: 3,
-    title: "인터스텔라",
-    releaseDate: "2014.11.06",
-    isBookmarked: false,
-  },
-];
-
-function MovieCard({ movie, onToggleBookmark }: MovieCardProps) {
-  return (
-    <li>
-      <h2>{movie.title}</h2>
-      <p>{movie.releaseDate}</p>
-      <button
-        type="button"
-        aria-pressed={movie.isBookmarked}
-        onClick={() => onToggleBookmark(movie.id)}
-      >
-        {movie.isBookmarked ? "북마크 해제" : "북마크 추가"}
-      </button>
-    </li>
-  );
-}
+const MOVIES_PER_PAGE = 10;
 
 export default function App() {
   const [movies, setMovies] = useState(initialMovies);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const totalPages = Math.max(1, Math.ceil(movies.length / MOVIES_PER_PAGE));
+  const pageMovies = movies.slice(
+    (currentPage - 1) * MOVIES_PER_PAGE,
+    currentPage * MOVIES_PER_PAGE,
+  );
 
   function handleToggleBookmark(movieId: number) {
     setMovies((currentMovies) =>
@@ -63,17 +29,18 @@ export default function App() {
   }
 
   return (
-    <main>
-      <h1>영화 목록</h1>
-      <ul>
-        {movies.map((movie) => (
-          <MovieCard
-            key={movie.id}
-            movie={movie}
-            onToggleBookmark={handleToggleBookmark}
-          />
-        ))}
-      </ul>
-    </main>
+    <>
+      <Header />
+      <main className="main container">
+        <h1 className="main__title">영화 목록</h1>
+        <MovieGrid movies={pageMovies} onToggleBookmark={handleToggleBookmark} />
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
+      </main>
+      <Footer />
+    </>
   );
 }
