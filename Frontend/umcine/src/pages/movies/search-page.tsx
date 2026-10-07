@@ -1,5 +1,6 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useRef, useState, type SubmitEvent } from "react";
+import { BookmarkButton } from "../../components/bookmark-button";
 import { movies } from "../../data/movies";
 import type { Movie } from "../../types/movie";
 import { cn } from "../../utils/cn";
@@ -64,18 +65,20 @@ function SearchResultItem({ movie }: { movie: Movie }) {
 
   return (
     <li className="flex gap-5 border-b border-(--color-border-default) py-5">
-      <Link
-        className="w-24 shrink-0 min-[481px]:w-32.75"
-        {...detailLinkProps}
-        tabIndex={-1}
-        aria-hidden="true"
-      >
-        <img
-          className="aspect-131/197 w-full rounded-lg bg-(--color-border-default) object-cover"
-          src={movie.posterPath}
-          alt=""
+      <div className="relative w-24 shrink-0 min-[481px]:w-32.75">
+        <Link {...detailLinkProps} tabIndex={-1} aria-hidden="true">
+          <img
+            className="aspect-131/197 w-full rounded-lg bg-(--color-border-default) object-cover"
+            src={movie.posterPath}
+            alt=""
+          />
+        </Link>
+        <BookmarkButton
+          className="absolute top-2 right-2"
+          movieId={movie.id}
+          movieTitle={movie.title}
         />
-      </Link>
+      </div>
       <div className="flex min-w-0 flex-col pt-1">
         <h3 className="text-lg/[1.4] font-bold">
           <Link className="hover:underline" {...detailLinkProps}>
