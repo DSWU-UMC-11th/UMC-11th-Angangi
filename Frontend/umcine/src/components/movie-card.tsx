@@ -23,9 +23,11 @@ export default function MovieCard({ movie }: MovieCardProps) {
             alt=""
           />
         </Link>
-        <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
-          <BookmarkButton movieId={movie.id} />
-        </div>
+        <BookmarkButton
+          className="absolute top-2 right-2 sm:top-3 sm:right-3"
+          movieId={movie.id}
+          movieTitle={movie.title}
+        />
       </div>
       <h2 className="mt-2 truncate text-[13px]/[1.4] font-bold text-(--color-text-primary) sm:mt-3 sm:text-sm/[1.4]">
         <Link

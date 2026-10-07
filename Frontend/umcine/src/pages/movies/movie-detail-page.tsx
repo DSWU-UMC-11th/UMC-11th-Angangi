@@ -1,5 +1,6 @@
 import { Link, useParams } from "@tanstack/react-router";
 import { useState, type SubmitEvent } from "react";
+import { BookmarkButton } from "../../components/bookmark-button";
 import { movies } from "../../data/movies";
 import { cn } from "../../utils/cn";
 
@@ -8,9 +9,6 @@ const RATINGS = [1, 2, 3, 4, 5];
 export function MovieDetailPage() {
   const { movieId } = useParams({ from: "/movies/$movieId" });
   const movie = movies.find((item) => item.id === Number(movieId));
-  const [isBookmarked, setIsBookmarked] = useState(
-    movie?.isBookmarked ?? false,
-  );
 
   if (!movie) {
     return (
@@ -22,10 +20,6 @@ export function MovieDetailPage() {
       </main>
     );
   }
-
-  const bookmarkIcon = isBookmarked
-    ? "/icons/movie-icons/bookmark.svg"
-    : "/icons/movie-icons/bookmark-outline.svg";
 
   return (
     <main className="flex-1 pb-20">
@@ -84,15 +78,12 @@ export function MovieDetailPage() {
           <p className="mt-4 text-[15px]/[1.8] text-(--color-text-secondary)">
             {movie.overview}
           </p>
-          <button
-            type="button"
-            className="mt-4 inline-flex h-11 items-center gap-1.5 rounded-md bg-(--color-action-primary) px-[18px] text-[15px] font-bold text-(--color-bg-surface) hover:bg-(--color-action-hover) active:bg-(--color-action-pressed)"
-            aria-pressed={isBookmarked}
-            onClick={() => setIsBookmarked((current) => !current)}
-          >
-            <img className="size-5 brightness-0 invert" src={bookmarkIcon} alt="" />
-            즐겨찾기
-          </button>
+          <BookmarkButton
+            className="mt-4"
+            movieId={movie.id}
+            movieTitle={movie.title}
+            variant="label"
+          />
         </section>
 
         <RatingForm />

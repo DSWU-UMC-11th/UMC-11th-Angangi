@@ -7,6 +7,7 @@ interface BookmarkStore {
 }
 
 export const useBookmarkStore = create<BookmarkStore>()(
+  // 북마크한 영화 ID를 localStorage에 저장하고 앱을 다시 열 때 복원해요
   persist(
     (set) => ({
       bookmarkedMovieIds: [],
@@ -20,9 +21,8 @@ export const useBookmarkStore = create<BookmarkStore>()(
     {
       name: "umcine-bookmark-store",
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
-        bookmarkedMovieIds: state.bookmarkedMovieIds,
-      }),
+      // 함수(action)는 저장할 수 없으니 ID 배열만 저장해요
+      partialize: (state) => ({ bookmarkedMovieIds: state.bookmarkedMovieIds }),
     },
   ),
 );
