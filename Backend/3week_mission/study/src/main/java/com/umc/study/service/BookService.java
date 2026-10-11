@@ -4,6 +4,7 @@ import com.umc.study.domain.Book;
 import com.umc.study.domain.Category;
 import com.umc.study.dto.BookResponse;
 import com.umc.study.dto.CreateBookRequest;
+import com.umc.study.exception.DuplicateBookException;
 import com.umc.study.repository.BookRepository;
 import com.umc.study.repository.CategoryRepository;
 
@@ -33,6 +34,10 @@ public class BookService {
 
     @Transactional
     public BookResponse createBook(CreateBookRequest request) {
+        if (bookRepository.existsByTitle(request.title())) {
+            throw new DuplicateBookException("이미 등록된 도서 제목입니다.");
+        }
+
         Category category = categoryRepository.findById(request.categoryId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 카테고리입니다."));
 

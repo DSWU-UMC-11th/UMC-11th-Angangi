@@ -9,4 +9,6 @@ public interface BookRepository extends JpaRepository<Book, Long> {
     List<Book> findAllByOrderByBookIdDesc();
 
     List<Book> findByTitleContainingOrderByBookIdDesc(String keyword);
+
+    boolean existsByTitle(String title);
 }
