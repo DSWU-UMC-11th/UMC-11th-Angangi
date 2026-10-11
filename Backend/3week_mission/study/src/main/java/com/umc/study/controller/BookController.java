@@ -1,5 +1,6 @@
 package com.umc.study.controller;
 
+import com.umc.study.dto.BookResponse;
 import com.umc.study.service.BookService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,30 +13,28 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.Map;
 
-@RestController // 데이터를 JSON으로 서빙하는 API 카운터
-@RequestMapping("/books") // 기본 주소: /books
+@RestController
+@RequestMapping("/books")
 @RequiredArgsConstructor
 public class BookController {
 
-    // 주방장(Service) 주입
     private final BookService bookService;
 
-    // GET /books 요청 처리
     @GetMapping
-    public List<Map<String, Object>> getBooks() {
-        return bookService.getAllBooks();
+    public List<BookResponse> getBooks() {
+        return bookService.getBooks();
     }
 
-    // GET /books/category/{categoryId} 요청 처리 (경로의 값을 categoryId로 받음)
-    @GetMapping("/category/{categoryId}")
-    public List<Map<String, Object>> getBooksByCategory(@PathVariable Long categoryId) {
-        return bookService.getBooksByCategory(categoryId);
-    }
+    // 3주차 Raw SQL 방식 (main 브랜치에 보존) - 4주차 범위 아님
+    // @GetMapping("/category/{categoryId}")
+    // public List<Map<String, Object>> getBooksByCategory(@PathVariable Long categoryId) {
+    //     return bookService.getBooksByCategory(categoryId);
+    // }
 
-    // POST /books 요청 처리 (JSON Body를 Map으로 받음)
-    @PostMapping
-    public String createBook(@RequestBody Map<String, Object> body) {
-        bookService.createBook(body);
-        return "도서 등록이 완료되었습니다!";
-    }
+    // TODO: 실습 2에서 CreateBookRequest DTO 방식으로 다시 구현
+    // @PostMapping
+    // public String createBook(@RequestBody Map<String, Object> body) {
+    //     bookService.createBook(body);
+    //     return "도서 등록이 완료되었습니다!";
+    // }
 }
