@@ -15,7 +15,6 @@ export default function MovieGrid({ movies }: MovieGridProps) {
   }
 
   return (
-    // 모바일 2열 → sm 3열 → lg 4열 → xl 5열(Figma 데스크톱)
     <ul className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 sm:gap-x-4 sm:gap-y-6 lg:grid-cols-4 lg:gap-x-5 xl:grid-cols-5">
       {movies.map((movie) => (
         <MovieCard key={movie.id} movie={movie} />

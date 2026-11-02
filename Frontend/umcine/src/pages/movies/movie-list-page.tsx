@@ -70,7 +70,6 @@ export function MovieListPage() {
   }, [currentPage, retryCount]);
 
   function handlePageChange(nextPage: number) {
-    // 1페이지는 page를 빼서 주소를 "/"로 유지해요
     navigate({ search: nextPage === 1 ? {} : { page: nextPage } });
   }
 
@@ -93,16 +92,16 @@ export function MovieListPage() {
     // 빈 결과와 성공 상태는 MovieGrid에서 구분해요
     // 정렬은 원본 날짜("2026-07-29")로 한 뒤 카드 UI 타입으로 바꿔요
     return (
-      <MovieGrid
-        movies={sortMovies(movies, sortOrder).map(toMovieCardItem)}
-      />
+      <MovieGrid movies={sortMovies(movies, sortOrder).map(toMovieCardItem)} />
     );
   }
 
   return (
     <main className="page-container flex-1 pt-8 pb-20">
       <div className="mb-6 flex items-center justify-between gap-4">
-        <h1 className="text-[28px] font-extrabold tracking-[-0.02em] min-[481px]:text-4xl">영화 목록</h1>
+        <h1 className="text-[28px] font-extrabold tracking-[-0.02em] min-[481px]:text-4xl">
+          영화 목록
+        </h1>
         <select
           className="h-10 rounded-md border border-(--color-border-default) bg-(--color-bg-surface) px-3 text-sm font-medium text-(--color-text-primary)"
           aria-label="정렬 기준"
