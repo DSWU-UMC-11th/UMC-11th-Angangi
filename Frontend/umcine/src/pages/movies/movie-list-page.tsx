@@ -1,12 +1,15 @@
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { getMovies } from "../../api/movies/get-movies";
 import type { TmdbMovieListItem } from "../../api/movies/models";
 import MovieGrid from "../../components/movie-grid";
 import Pagination from "../../components/pagination";
+import RetryMessage from "../../components/retry-message";
 import {
   useViewSettingsStore,
   type MovieSortOrder,
 } from "../../stores/view-settings-store";
+import { toMovieCardItem } from "../../utils/movies/to-movie-card-item";
 
 const TOTAL_PAGES = 5;
 
@@ -30,13 +33,18 @@ function sortMovies(list: TmdbMovieListItem[], sortOrder: MovieSortOrder) {
 }
 
 export function MovieListPage() {
-  const [currentPage, setCurrentPage] = useState(1);
+  const { page = 1 } = useSearch({ from: "/" });
+  const navigate = useNavigate({ from: "/" });
+  // 페이지네이션 범위를 넘는 번호는 마지막 페이지로 보여줘요
+  const currentPage = Math.min(page, TOTAL_PAGES);
   const sortOrder = useViewSettingsStore((state) => state.sortOrder);
   const setSortOrder = useViewSettingsStore((state) => state.setSortOrder);
 
   const [movies, setMovies] = useState<TmdbMovieListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // 값이 바뀌면 Effect가 다시 실행되어 마지막 요청을 다시 보내요
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     let ignore = false;
@@ -59,7 +67,12 @@ export function MovieListPage() {
     return () => {
       ignore = true;
     };
-  }, [currentPage]);
+  }, [currentPage, retryCount]);
+
+  function handlePageChange(nextPage: number) {
+    // 1페이지는 page를 빼서 주소를 "/"로 유지해요
+    navigate({ search: nextPage === 1 ? {} : { page: nextPage } });
+  }
 
   function renderContent() {
     if (isLoading) {
@@ -71,13 +84,19 @@ export function MovieListPage() {
     }
     if (errorMessage) {
       return (
-        <p className="py-20 text-center text-(--color-text-secondary)">
-          {errorMessage}
-        </p>
+        <RetryMessage
+          message={errorMessage}
+          onRetry={() => setRetryCount((count) => count + 1)}
+        />
       );
     }
     // 빈 결과와 성공 상태는 MovieGrid에서 구분해요
-    return <MovieGrid movies={sortMovies(movies, sortOrder)} />;
+    // 정렬은 원본 날짜("2026-07-29")로 한 뒤 카드 UI 타입으로 바꿔요
+    return (
+      <MovieGrid
+        movies={sortMovies(movies, sortOrder).map(toMovieCardItem)}
+      />
+    );
   }
 
   return (
@@ -103,7 +122,7 @@ export function MovieListPage() {
       <Pagination
         currentPage={currentPage}
         totalPages={TOTAL_PAGES}
-        onPageChange={setCurrentPage}
+        onPageChange={handlePageChange}
       />
     </main>
   );

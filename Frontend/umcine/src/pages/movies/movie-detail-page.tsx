@@ -44,6 +44,8 @@ function MovieDetailContent({ movieId }: { movieId: number }) {
   const [movie, setMovie] = useState<TmdbMovieDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // 값이 바뀌면 Effect가 다시 실행되어 같은 영화 ID로 다시 요청해요
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     let ignore = false;
@@ -64,14 +66,23 @@ function MovieDetailContent({ movieId }: { movieId: number }) {
     return () => {
       ignore = true;
     };
-  }, [movieId]);
+  }, [movieId, retryCount]);
+
+  function handleRetry() {
+    setIsLoading(true);
+    setErrorMessage(null);
+    setRetryCount((count) => count + 1);
+  }
 
   if (isLoading) {
     return <DetailMessage message="영화 정보를 불러오는 중이에요." />;
   }
   if (errorMessage || !movie) {
     return (
-      <DetailMessage message={errorMessage ?? "영화를 찾을 수 없어요."} />
+      <DetailMessage
+        message={errorMessage ?? "영화를 찾을 수 없어요."}
+        onRetry={handleRetry}
+      />
     );
   }
 
@@ -163,10 +174,24 @@ function MovieDetailContent({ movieId }: { movieId: number }) {
   );
 }
 
-function DetailMessage({ message }: { message: string }) {
+interface DetailMessageProps {
+  message: string;
+  onRetry?: () => void;
+}
+
+function DetailMessage({ message, onRetry }: DetailMessageProps) {
   return (
     <main className="page-container flex flex-1 flex-col items-start gap-3 pt-8 pb-20 text-(--color-text-secondary)">
       <p>{message}</p>
+      {onRetry && (
+        <button
+          type="button"
+          className="h-10 rounded-md bg-(--color-text-primary) px-4 text-sm font-bold text-(--color-bg-surface) hover:opacity-85"
+          onClick={onRetry}
+        >
+          다시 시도
+        </button>
+      )}
       <Link className="text-(--color-action-primary) underline" to="/">
         영화 목록으로 돌아가기
       </Link>

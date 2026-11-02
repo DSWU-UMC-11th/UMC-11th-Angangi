@@ -1,15 +1,12 @@
 import { Link } from "@tanstack/react-router";
-import type { TmdbMovieListItem } from "../api/movies/models";
-import { getTmdbPosterUrl } from "../utils/movies/tmdb-image";
+import type { MovieCardItem } from "../types/movie-card";
 import { BookmarkButton } from "./bookmark-button";
 
 interface MovieCardProps {
-  movie: TmdbMovieListItem;
+  movie: MovieCardItem;
 }
 
 export default function MovieCard({ movie }: MovieCardProps) {
-  const posterUrl = getTmdbPosterUrl(movie.poster_path);
-
   return (
     <li>
       <div className="relative aspect-[8/9] overflow-hidden rounded-lg bg-(--color-border-default)">
@@ -20,8 +17,12 @@ export default function MovieCard({ movie }: MovieCardProps) {
           tabIndex={-1}
           aria-hidden="true"
         >
-          {posterUrl ? (
-            <img className="size-full object-cover" src={posterUrl} alt="" />
+          {movie.posterUrl ? (
+            <img
+              className="size-full object-cover"
+              src={movie.posterUrl}
+              alt=""
+            />
           ) : (
             <span className="flex size-full items-center justify-center text-xs text-(--color-text-tertiary)">
               이미지 없음
@@ -44,7 +45,7 @@ export default function MovieCard({ movie }: MovieCardProps) {
         </Link>
       </h2>
       <p className="mt-1 text-xs/normal text-(--color-text-tertiary)">
-        {movie.release_date}
+        {movie.releaseDate}
       </p>
     </li>
   );

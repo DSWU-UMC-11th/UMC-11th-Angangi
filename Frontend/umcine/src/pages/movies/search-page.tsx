@@ -1,10 +1,12 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type SubmitEvent } from "react";
 import type { TmdbMovieListItem } from "../../api/movies/models";
+import type { MovieCardItem } from "../../types/movie-card";
 import { searchMovies } from "../../api/movies/search-movies";
 import { BookmarkButton } from "../../components/bookmark-button";
+import RetryMessage from "../../components/retry-message";
 import { cn } from "../../utils/cn";
-import { getTmdbPosterUrl } from "../../utils/movies/tmdb-image";
+import { toMovieCardItem } from "../../utils/movies/to-movie-card-item";
 
 export function SearchPage() {
   const { query = "" } = useSearch({ from: "/search" });
@@ -38,6 +40,8 @@ function SearchResults({ query }: { query: string }) {
   const [movies, setMovies] = useState<TmdbMovieListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // 값이 바뀌면 Effect가 다시 실행되어 같은 검색어로 다시 요청해요
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     let ignore = false;
@@ -56,7 +60,13 @@ function SearchResults({ query }: { query: string }) {
     return () => {
       ignore = true;
     };
-  }, [query]);
+  }, [query, retryCount]);
+
+  function handleRetry() {
+    setIsLoading(true);
+    setErrorMessage(null);
+    setRetryCount((count) => count + 1);
+  }
 
   function renderResults() {
     if (isLoading) {
@@ -67,11 +77,7 @@ function SearchResults({ query }: { query: string }) {
       );
     }
     if (errorMessage) {
-      return (
-        <p className="py-20 text-center text-(--color-text-secondary)">
-          {errorMessage}
-        </p>
-      );
+      return <RetryMessage message={errorMessage} onRetry={handleRetry} />;
     }
     if (movies.length === 0) {
       return (
@@ -82,7 +88,7 @@ function SearchResults({ query }: { query: string }) {
     }
     return (
       <ul className="grid grid-cols-1 gap-x-10 min-[1025px]:grid-cols-2">
-        {movies.map((movie) => (
+        {movies.map(toMovieCardItem).map((movie) => (
           <SearchResultItem key={movie.id} movie={movie} />
         ))}
       </ul>
@@ -104,21 +110,20 @@ function SearchResults({ query }: { query: string }) {
   );
 }
 
-function SearchResultItem({ movie }: { movie: TmdbMovieListItem }) {
+function SearchResultItem({ movie }: { movie: MovieCardItem }) {
   const detailLinkProps = {
     to: "/movies/$movieId",
     params: { movieId: String(movie.id) },
   } as const;
-  const posterUrl = getTmdbPosterUrl(movie.poster_path);
 
   return (
     <li className="flex gap-5 border-b border-(--color-border-default) py-5">
       <div className="relative w-24 shrink-0 min-[481px]:w-32.75">
         <Link {...detailLinkProps} tabIndex={-1} aria-hidden="true">
-          {posterUrl ? (
+          {movie.posterUrl ? (
             <img
               className="aspect-131/197 w-full rounded-lg bg-(--color-border-default) object-cover"
-              src={posterUrl}
+              src={movie.posterUrl}
               alt=""
             />
           ) : (
@@ -140,8 +145,8 @@ function SearchResultItem({ movie }: { movie: TmdbMovieListItem }) {
           </Link>
         </h3>
         <p className="mt-2 flex flex-wrap gap-x-2 text-xs text-(--color-text-tertiary)">
-          <span>{movie.original_title}</span>
-          <span>{movie.release_date}</span>
+          <span>{movie.originalTitle}</span>
+          <span>{movie.releaseDate}</span>
         </p>
         <p className="mt-3 line-clamp-3 text-[13px]/[1.6] text-(--color-text-secondary)">
           {movie.overview}
