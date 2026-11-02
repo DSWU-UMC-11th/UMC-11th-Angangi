@@ -1,15 +1,15 @@
-import type { Movie } from "../types/movie";
+import type { TmdbMovieListItem } from "../api/movies/models";
 import MovieCard from "./movie-card";
 
 interface MovieGridProps {
-  movies: Movie[];
+  movies: TmdbMovieListItem[];
 }
 
 export default function MovieGrid({ movies }: MovieGridProps) {
   if (movies.length === 0) {
     return (
       <p className="py-20 text-center text-(--color-text-secondary)">
-        표시할 영화가 없어요.
+        조건에 맞는 영화가 없어요.
       </p>
     );
   }

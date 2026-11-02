@@ -1,36 +1,99 @@
 import { Link, useParams } from "@tanstack/react-router";
-import { useState, type SubmitEvent } from "react";
+import { useEffect, useState, type SubmitEvent } from "react";
+import { getMovieDetail } from "../../api/movies/get-movie-detail";
+import type { TmdbMovieDetail } from "../../api/movies/models";
 import { BookmarkButton } from "../../components/bookmark-button";
-import { movies } from "../../data/movies";
 import { cn } from "../../utils/cn";
+import { getMovieDetailErrorMessage } from "../../utils/movies/get-movie-detail-error-message";
+import {
+  getTmdbBackdropUrl,
+  getTmdbPosterUrl,
+} from "../../utils/movies/tmdb-image";
 
 const RATINGS = [1, 2, 3, 4, 5];
 
+function isValidMovieId(movieId: number) {
+  return Number.isInteger(movieId) && movieId > 0;
+}
+
+// 145분 → "2시간 25분"
+function formatRuntime(runtime: number | null) {
+  if (runtime === null) return "상영 시간 정보가 없어요.";
+
+  const hours = Math.floor(runtime / 60);
+  const minutes = runtime % 60;
+  if (hours === 0) return `${minutes}분`;
+  if (minutes === 0) return `${hours}시간`;
+  return `${hours}시간 ${minutes}분`;
+}
+
 export function MovieDetailPage() {
   const { movieId } = useParams({ from: "/movies/$movieId" });
-  const movie = movies.find((item) => item.id === Number(movieId));
+  const parsedMovieId = Number(movieId);
 
-  if (!movie) {
+  // 유효하지 않은 ID는 요청하지 않아요
+  if (!isValidMovieId(parsedMovieId)) {
+    return <DetailMessage message="올바르지 않은 영화 번호예요." />;
+  }
+
+  // 영화 ID가 바뀌면 key가 바뀌어 상세 state가 처음 상태로 초기화돼요
+  return <MovieDetailContent key={parsedMovieId} movieId={parsedMovieId} />;
+}
+
+function MovieDetailContent({ movieId }: { movieId: number }) {
+  const [movie, setMovie] = useState<TmdbMovieDetail | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadMovie() {
+      try {
+        const response = await getMovieDetail(movieId);
+        if (!ignore) setMovie(response);
+      } catch (error) {
+        if (!ignore) setErrorMessage(getMovieDetailErrorMessage(error));
+      } finally {
+        if (!ignore) setIsLoading(false);
+      }
+    }
+
+    loadMovie();
+
+    return () => {
+      ignore = true;
+    };
+  }, [movieId]);
+
+  if (isLoading) {
+    return <DetailMessage message="영화 정보를 불러오는 중이에요." />;
+  }
+  if (errorMessage || !movie) {
     return (
-      <main className="page-container flex flex-1 flex-col items-start gap-3 pt-8 pb-20 text-(--color-text-secondary)">
-        <p>영화를 찾을 수 없어요.</p>
-        <Link className="text-(--color-action-primary) underline" to="/">
-          영화 목록으로 돌아가기
-        </Link>
-      </main>
+      <DetailMessage message={errorMessage ?? "영화를 찾을 수 없어요."} />
     );
   }
+
+  const backdropUrl = getTmdbBackdropUrl(movie.backdrop_path);
+  const posterUrl = getTmdbPosterUrl(movie.poster_path);
 
   return (
     <main className="flex-1 pb-20">
       {/* 상단 배경 영역 */}
       <section className="relative h-80 overflow-hidden bg-(--color-text-primary) text-(--color-bg-surface) min-[641px]:h-[408px]">
-        <img
-          className="absolute inset-0 size-full object-cover"
-          src={movie.backdropPath}
-          alt=""
-          aria-hidden="true"
-        />
+        {backdropUrl ? (
+          <img
+            className="absolute inset-0 size-full object-cover"
+            src={backdropUrl}
+            alt=""
+            aria-hidden="true"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-(--color-border-default) text-sm text-(--color-text-tertiary)">
+            이미지 없음
+          </div>
+        )}
         {/* 흰 글자가 배경 이미지 위에서도 읽히도록 왼쪽 아래를 어둡게 */}
         <div
           className="absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.6),transparent_60%),linear-gradient(to_right,rgba(0,0,0,0.45),transparent_60%)]"
@@ -53,11 +116,11 @@ export function MovieDetailPage() {
             <h1 className="text-[32px]/[1.2] font-extrabold tracking-[-0.03em] min-[641px]:text-5xl/[1.2]">
               {movie.title}
             </h1>
-            <p className="mt-3 text-base">{movie.originalTitle}</p>
+            <p className="mt-3 text-base">{movie.original_title}</p>
             <p className="mt-2 flex flex-wrap gap-x-2.5 gap-y-1 text-sm font-bold">
-              <span>{movie.releaseDate}</span>
-              <span>{movie.genres.join(" · ")}</span>
-              <span>{movie.runtime}</span>
+              <span>{movie.release_date}</span>
+              <span>{movie.genres.map((genre) => genre.name).join(", ")}</span>
+              <span>{formatRuntime(movie.runtime)}</span>
             </p>
           </div>
         </div>
@@ -65,16 +128,24 @@ export function MovieDetailPage() {
 
       {/* 하단 정보 영역 */}
       <div className="page-container grid grid-cols-1 items-start gap-6 pt-7 min-[641px]:grid-cols-[200px_minmax(0,1fr)] min-[641px]:gap-9 min-[1025px]:grid-cols-[226px_minmax(0,1fr)_406px]">
-        <img
-          className="aspect-226/323 w-40 rounded-lg object-cover shadow-[0_12px_24px_rgba(23,25,30,0.16)] min-[641px]:w-full"
-          src={movie.posterPath}
-          alt={`${movie.title} 포스터`}
-        />
+        {posterUrl ? (
+          <img
+            className="aspect-226/323 w-40 rounded-lg object-cover shadow-[0_12px_24px_rgba(23,25,30,0.16)] min-[641px]:w-full"
+            src={posterUrl}
+            alt={`${movie.title} 포스터`}
+          />
+        ) : (
+          <div className="flex aspect-226/323 w-40 items-center justify-center rounded-lg bg-(--color-border-default) text-sm text-(--color-text-tertiary) min-[641px]:w-full">
+            이미지 없음
+          </div>
+        )}
 
         <section>
-          <h2 className="text-[22px] font-extrabold tracking-[-0.02em]">
-            {movie.tagline}
-          </h2>
+          {movie.tagline && (
+            <h2 className="text-[22px] font-extrabold tracking-[-0.02em]">
+              {movie.tagline}
+            </h2>
+          )}
           <p className="mt-4 text-[15px]/[1.8] text-(--color-text-secondary)">
             {movie.overview}
           </p>
@@ -88,6 +159,17 @@ export function MovieDetailPage() {
 
         <RatingForm />
       </div>
+    </main>
+  );
+}
+
+function DetailMessage({ message }: { message: string }) {
+  return (
+    <main className="page-container flex flex-1 flex-col items-start gap-3 pt-8 pb-20 text-(--color-text-secondary)">
+      <p>{message}</p>
+      <Link className="text-(--color-action-primary) underline" to="/">
+        영화 목록으로 돌아가기
+      </Link>
     </main>
   );
 }
