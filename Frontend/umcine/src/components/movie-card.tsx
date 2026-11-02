@@ -1,9 +1,9 @@
 import { Link } from "@tanstack/react-router";
-import type { Movie } from "../types/movie";
+import type { MovieCardItem } from "../types/movie-card";
 import { BookmarkButton } from "./bookmark-button";
 
 interface MovieCardProps {
-  movie: Movie;
+  movie: MovieCardItem;
 }
 
 export default function MovieCard({ movie }: MovieCardProps) {
@@ -17,11 +17,17 @@ export default function MovieCard({ movie }: MovieCardProps) {
           tabIndex={-1}
           aria-hidden="true"
         >
-          <img
-            className="size-full object-cover"
-            src={movie.posterPath}
-            alt=""
-          />
+          {movie.posterUrl ? (
+            <img
+              className="size-full object-cover"
+              src={movie.posterUrl}
+              alt=""
+            />
+          ) : (
+            <span className="flex size-full items-center justify-center text-xs text-(--color-text-tertiary)">
+              이미지 없음
+            </span>
+          )}
         </Link>
         <BookmarkButton
           className="absolute top-2 right-2 sm:top-3 sm:right-3"
