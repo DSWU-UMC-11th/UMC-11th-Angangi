@@ -1,5 +1,7 @@
+"use client";
+
 import { useIsMutating, useMutation } from "@tanstack/react-query";
-import { useLocation, useNavigate } from "@tanstack/react-router";
+import { useRouter } from "next/navigation";
 import { getApiFailure } from "../api/api-response";
 import {
   favoriteMutations,
@@ -24,8 +26,7 @@ export function BookmarkButton({
   className,
 }: BookmarkButtonProps) {
   const accessToken = useAuthStore((state) => state.accessToken);
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
   const toggleFavoriteMutation = useMutation(favoriteMutations.toggle());
   const isPending =
     useIsMutating({
@@ -38,7 +39,10 @@ export function BookmarkButton({
   const handleClick = () => {
     if (!accessToken) {
       if (confirm("즐겨찾기는 로그인 후 이용할 수 있어요. 로그인할까요?")) {
-        navigate({ to: "/login", search: { redirect: location.href } });
+        const { pathname, search } = window.location;
+        router.push(
+          `/login?redirect=${encodeURIComponent(pathname + search)}`,
+        );
       }
       return;
     }

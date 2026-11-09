@@ -1,5 +1,7 @@
+"use client";
+
 import { useQuery } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
+import Link from "next/link";
 import { memberQueries } from "../../api/members/member-queries";
 import RetryMessage from "../../components/retry-message";
 import { clearSession } from "../../utils/auth/clear-session";
@@ -7,13 +9,7 @@ import { formatDate } from "../../utils/members/format-date";
 import { MyFavoritesSection } from "./my-favorites-section";
 
 export function MyProfilePage() {
-  const navigate = useNavigate();
   const meQuery = useQuery(memberQueries.me());
-
-  const handleLogout = async () => {
-    await navigate({ to: "/" });
-    clearSession();
-  };
 
   function renderProfile() {
     if (meQuery.isPending) {
@@ -56,7 +52,7 @@ export function MyProfilePage() {
           </div>
           <Link
             className="flex h-10 items-center gap-1.5 rounded-md border border-(--color-border-default) px-4 text-sm font-bold text-(--color-text-primary) no-underline hover:bg-(--color-bg-page)"
-            to="/my/edit"
+            href="/my/edit"
           >
             <img className="size-4" src="/icons/movie-icons/edit.svg" alt="" />
             내 정보 수정
@@ -81,7 +77,7 @@ export function MyProfilePage() {
 
       <Link
         className="mt-4 flex max-w-160 items-center justify-between rounded-xl border border-(--color-border-default) bg-(--color-bg-surface) px-6 py-5 text-(--color-text-primary) no-underline hover:bg-(--color-bg-page) min-[481px]:px-8"
-        to="/my/ratings"
+        href="/my/ratings"
       >
         <span>
           <span className="block font-bold">내 평점</span>
@@ -101,7 +97,7 @@ export function MyProfilePage() {
       <button
         type="button"
         className="mt-6 text-sm text-(--color-text-secondary) underline hover:text-(--color-text-primary)"
-        onClick={handleLogout}
+        onClick={clearSession}
       >
         로그아웃
       </button>

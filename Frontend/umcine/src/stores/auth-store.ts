@@ -15,6 +15,7 @@ export const useAuthStore = create<AuthStore>()(
     {
       name: "umcine-auth-store",
       storage: createJSONStorage(() => localStorage),
+      skipHydration: true,
       partialize: (state) => ({ accessToken: state.accessToken }),
     },
   ),

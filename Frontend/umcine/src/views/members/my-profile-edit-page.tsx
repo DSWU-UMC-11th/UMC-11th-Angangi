@@ -1,5 +1,8 @@
+"use client";
+
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, type ReactNode, type SubmitEvent } from "react";
 import { getApiFailure } from "../../api/api-response";
 import { memberMutations } from "../../api/members/member-mutations";
@@ -36,7 +39,7 @@ export function MyProfileEditPage() {
 }
 
 function MyProfileEditForm({ profile }: { profile: MemberInfo }) {
-  const navigate = useNavigate();
+  const router = useRouter();
   const updateMeMutation = useMutation(memberMutations.updateMe());
   const isSubmitting = updateMeMutation.isPending;
   const [nickname, setNickname] = useState(profile.nickname);
@@ -74,7 +77,7 @@ function MyProfileEditForm({ profile }: { profile: MemberInfo }) {
       {
         onSuccess: () => {
           alert("내 정보를 수정했어요.");
-          navigate({ to: "/my" });
+          router.push("/my");
         },
       },
     );
@@ -126,7 +129,7 @@ function MyProfileEditForm({ profile }: { profile: MemberInfo }) {
           <div className="mt-2 flex gap-2">
             <Link
               className="flex h-12 flex-1 items-center justify-center rounded-md border border-(--color-border-default) text-[15px] font-bold text-(--color-text-primary) no-underline hover:bg-(--color-bg-page)"
-              to="/my"
+              href="/my"
             >
               취소
             </Link>

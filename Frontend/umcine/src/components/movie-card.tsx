@@ -1,4 +1,5 @@
-import { Link } from "@tanstack/react-router";
+import Image from "next/image";
+import Link from "next/link";
 import type { MovieCardItem } from "../types/movie-card";
 import { BookmarkButton } from "./bookmark-button";
 
@@ -13,16 +14,17 @@ export default function MovieCard({ movie, isFavorite }: MovieCardProps) {
       <div className="relative aspect-[8/9] overflow-hidden rounded-lg bg-(--color-border-default)">
         <Link
           className="block h-full"
-          to="/movies/$movieId"
-          params={{ movieId: String(movie.id) }}
+          href={`/movies/${movie.id}`}
           tabIndex={-1}
           aria-hidden="true"
         >
           {movie.posterUrl ? (
-            <img
-              className="size-full object-cover"
+            <Image
+              className="object-cover"
               src={movie.posterUrl}
               alt=""
+              fill
+              sizes="(min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
             />
           ) : (
             <span className="flex size-full items-center justify-center text-xs text-(--color-text-tertiary)">
@@ -40,8 +42,7 @@ export default function MovieCard({ movie, isFavorite }: MovieCardProps) {
       <h2 className="mt-2 truncate text-[13px]/[1.4] font-bold text-(--color-text-primary) sm:mt-3 sm:text-sm/[1.4]">
         <Link
           className="hover:underline"
-          to="/movies/$movieId"
-          params={{ movieId: String(movie.id) }}
+          href={`/movies/${movie.id}`}
         >
           {movie.title}
         </Link>

@@ -1,3 +1,5 @@
+"use client";
+
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { favoriteQueries } from "../../api/favorites/favorite-queries";
 import { movieQueries } from "../../api/movies/movie-queries";

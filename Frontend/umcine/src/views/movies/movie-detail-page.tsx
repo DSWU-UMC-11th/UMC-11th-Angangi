@@ -1,5 +1,9 @@
+"use client";
+
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Link, useLocation, useParams } from "@tanstack/react-router";
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState, type SubmitEvent } from "react";
 import { favoriteQueries } from "../../api/favorites/favorite-queries";
 import { movieQueries } from "../../api/movies/movie-queries";
@@ -21,10 +25,6 @@ import {
 
 const RATINGS = [1, 2, 3, 4, 5];
 
-function isValidMovieId(movieId: number) {
-  return Number.isInteger(movieId) && movieId > 0;
-}
-
 function formatRuntime(runtime: number | null) {
   if (runtime === null) return "상영 시간 정보가 없어요.";
 
@@ -35,19 +35,13 @@ function formatRuntime(runtime: number | null) {
   return `${hours}시간 ${minutes}분`;
 }
 
-export function MovieDetailPage() {
-  const { movieId: movieIdParam } = useParams({ from: "/movies/$movieId" });
-  const movieId = Number(movieIdParam);
-  const isValid = isValidMovieId(movieId);
+interface MovieDetailPageProps {
+  movieId: number;
+}
 
-  const movieDetailQuery = useQuery({
-    ...movieQueries.detail(movieId),
-    enabled: isValid,
-  });
+export function MovieDetailPage({ movieId }: MovieDetailPageProps) {
+  const movieDetailQuery = useQuery(movieQueries.detail(movieId));
 
-  if (!isValid) {
-    return <DetailMessage message="올바르지 않은 영화 번호예요." />;
-  }
   if (movieDetailQuery.isPending) {
     return <DetailMessage message="영화 정보를 불러오는 중이에요." />;
   }
@@ -77,11 +71,14 @@ function MovieDetailContent({ movie }: { movie: TmdbMovieDetail }) {
     <main className="flex-1 pb-20">
       <section className="relative h-80 overflow-hidden bg-(--color-text-primary) text-(--color-bg-surface) min-[641px]:h-[408px]">
         {backdropUrl ? (
-          <img
-            className="absolute inset-0 size-full object-cover"
+          <Image
+            className="object-cover"
             src={backdropUrl}
             alt=""
             aria-hidden="true"
+            fill
+            preload
+            sizes="100vw"
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center bg-(--color-border-default) text-sm text-(--color-text-tertiary)">
@@ -95,7 +92,7 @@ function MovieDetailContent({ movie }: { movie: TmdbMovieDetail }) {
         <div className="page-container relative z-1 flex h-full flex-col justify-between pt-8 pb-7">
           <Link
             className="inline-flex items-center gap-1 self-start text-sm font-bold hover:underline"
-            to="/"
+            href="/"
           >
             <img
               className="size-5 brightness-0 invert"
@@ -120,11 +117,15 @@ function MovieDetailContent({ movie }: { movie: TmdbMovieDetail }) {
 
       <div className="page-container grid grid-cols-1 items-start gap-6 pt-7 min-[641px]:grid-cols-[200px_minmax(0,1fr)] min-[641px]:gap-9 min-[1025px]:grid-cols-[226px_minmax(0,1fr)_406px]">
         {posterUrl ? (
-          <img
-            className="aspect-226/323 w-40 rounded-lg object-cover shadow-[0_12px_24px_rgba(23,25,30,0.16)] min-[641px]:w-full"
-            src={posterUrl}
-            alt={`${movie.title} 포스터`}
-          />
+          <div className="relative aspect-226/323 w-40 overflow-hidden rounded-lg shadow-[0_12px_24px_rgba(23,25,30,0.16)] min-[641px]:w-full">
+            <Image
+              className="object-cover"
+              src={posterUrl}
+              alt={`${movie.title} 포스터`}
+              fill
+              sizes="(min-width: 1025px) 226px, (min-width: 641px) 200px, 160px"
+            />
+          </div>
         ) : (
           <div className="flex aspect-226/323 w-40 items-center justify-center rounded-lg bg-(--color-border-default) text-sm text-(--color-text-tertiary) min-[641px]:w-full">
             이미지 없음
@@ -160,7 +161,7 @@ interface DetailMessageProps {
   onRetry?: () => void;
 }
 
-function DetailMessage({ message, onRetry }: DetailMessageProps) {
+export function DetailMessage({ message, onRetry }: DetailMessageProps) {
   return (
     <main className="page-container flex flex-1 flex-col items-start gap-3 pt-8 pb-20 text-(--color-text-secondary)">
       <p>{message}</p>
@@ -173,7 +174,7 @@ function DetailMessage({ message, onRetry }: DetailMessageProps) {
           다시 시도
         </button>
       )}
-      <Link className="text-(--color-action-primary) underline" to="/">
+      <Link className="text-(--color-action-primary) underline" href="/">
         영화 목록으로 돌아가기
       </Link>
     </main>
@@ -191,7 +192,7 @@ const ratingSectionClassName =
 
 function RatingSection({ movieId }: { movieId: number }) {
   const memberId = useMyMemberId();
-  const location = useLocation();
+  const pathname = usePathname();
 
   return (
     <section className={ratingSectionClassName} aria-labelledby="my-rating-title">
@@ -203,8 +204,7 @@ function RatingSection({ movieId }: { movieId: number }) {
           평점은 로그인 후 남길 수 있어요.{" "}
           <Link
             className="font-bold text-(--color-action-primary) underline"
-            to="/login"
-            search={{ redirect: location.href }}
+            href={`/login?redirect=${encodeURIComponent(pathname)}`}
           >
             로그인하러 가기
           </Link>

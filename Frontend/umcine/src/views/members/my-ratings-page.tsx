@@ -1,5 +1,8 @@
+"use client";
+
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import { movieQueries } from "../../api/movies/movie-queries";
 import type { MemberRating } from "../../api/ratings/models";
@@ -95,11 +98,9 @@ function RatingItem({ rating }: { rating: MemberRating }) {
   return (
     <li className="flex gap-4 rounded-lg border border-(--color-border-default) bg-(--color-bg-surface) p-4">
       {posterUrl ? (
-        <img
-          className="aspect-2/3 w-16 shrink-0 rounded-md object-cover"
-          src={posterUrl}
-          alt=""
-        />
+        <div className="relative aspect-2/3 w-16 shrink-0 overflow-hidden rounded-md">
+          <Image className="object-cover" src={posterUrl} alt="" fill sizes="64px" />
+        </div>
       ) : (
         <div className="flex aspect-2/3 w-16 shrink-0 items-center justify-center rounded-md bg-(--color-border-default) text-[11px] text-(--color-text-tertiary)">
           {movieQuery.isPending ? "" : "이미지 없음"}
@@ -108,8 +109,7 @@ function RatingItem({ rating }: { rating: MemberRating }) {
       <div className="min-w-0 flex-1">
         <Link
           className="font-bold text-(--color-text-primary) hover:underline"
-          to="/movies/$movieId"
-          params={{ movieId: String(rating.movieId) }}
+          href={`/movies/${rating.movieId}`}
         >
           {movie?.title ?? `영화 #${rating.movieId}`}
         </Link>

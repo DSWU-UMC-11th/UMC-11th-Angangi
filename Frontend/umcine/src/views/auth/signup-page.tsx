@@ -1,5 +1,8 @@
+"use client";
+
 import { useMutation } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, type SubmitEvent } from "react";
 import { checkEmail } from "../../api/members/check-email";
 import { checkNickname } from "../../api/members/check-nickname";
@@ -73,7 +76,7 @@ export function SignupPage() {
   const [duplicateCheck, setDuplicateCheck] = useState<
     Record<DuplicateCheckKey, DuplicateCheckStatus>
   >({ email: "idle", nickname: "idle" });
-  const navigate = useNavigate();
+  const router = useRouter();
   const signupMutation = useMutation(memberMutations.signup());
   const isSubmitting = signupMutation.isPending;
   const submitError = signupMutation.isError
@@ -146,7 +149,7 @@ export function SignupPage() {
       {
         onSuccess: (response) => {
           alert(response.message);
-          navigate({ to: "/login" });
+          router.push("/login");
         },
         onError: (error) => {
           const failure = getApiFailure(error);
@@ -285,7 +288,7 @@ export function SignupPage() {
           이미 계정이 있나요?{" "}
           <Link
             className="font-bold text-(--color-action-primary) hover:underline"
-            to="/login"
+            href="/login"
           >
             로그인
           </Link>

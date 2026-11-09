@@ -1,4 +1,4 @@
-import { QueryClient } from "@tanstack/react-query";
+import { isServer, QueryClient } from "@tanstack/react-query";
 import { isHTTPError } from "ky";
 
 const ONE_MINUTE = 60 * 1000;
@@ -16,8 +16,21 @@ function shouldRetry(failureCount: number, error: unknown) {
   return failureCount < MAX_RETRY_COUNT;
 }
 
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: { staleTime: ONE_MINUTE, retry: shouldRetry },
-  },
-});
+function makeQueryClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: ONE_MINUTE,
+        retry: isServer ? false : shouldRetry,
+      },
+    },
+  });
+}
+
+let browserQueryClient: QueryClient | undefined;
+
+export function getQueryClient() {
+  if (isServer) return makeQueryClient();
+  browserQueryClient ??= makeQueryClient();
+  return browserQueryClient;
+}

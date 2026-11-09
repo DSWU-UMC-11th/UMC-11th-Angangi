@@ -1,5 +1,7 @@
+"use client";
+
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useRouter } from "next/navigation";
 import { movieQueries } from "../../api/movies/movie-queries";
 import type { TmdbMovieListItem } from "../../api/movies/models";
 import MovieGrid from "../../components/movie-grid";
@@ -9,9 +11,8 @@ import {
   useViewSettingsStore,
   type MovieSortOrder,
 } from "../../stores/view-settings-store";
+import { MOVIE_LIST_TOTAL_PAGES } from "../../utils/movies/movie-list-pages";
 import { toMovieCardItem } from "../../utils/movies/to-movie-card-item";
-
-const TOTAL_PAGES = 5;
 
 const SORT_OPTIONS: { value: MovieSortOrder; label: string }[] = [
   { value: "default", label: "기본순" },
@@ -31,10 +32,12 @@ function sortMovies(list: TmdbMovieListItem[], sortOrder: MovieSortOrder) {
   return list;
 }
 
-export function MovieListPage() {
-  const { page = 1 } = useSearch({ from: "/" });
-  const navigate = useNavigate({ from: "/" });
-  const currentPage = Math.min(page, TOTAL_PAGES);
+interface MovieListPageProps {
+  currentPage: number;
+}
+
+export function MovieListPage({ currentPage }: MovieListPageProps) {
+  const router = useRouter();
   const sortOrder = useViewSettingsStore((state) => state.sortOrder);
   const setSortOrder = useViewSettingsStore((state) => state.setSortOrder);
 
@@ -43,7 +46,7 @@ export function MovieListPage() {
   const movies = moviesQuery.data?.results ?? [];
 
   function handlePageChange(nextPage: number) {
-    navigate({ search: nextPage === 1 ? {} : { page: nextPage } });
+    router.push(nextPage === 1 ? "/" : `/?page=${nextPage}`);
   }
 
   function renderContent() {
@@ -91,7 +94,7 @@ export function MovieListPage() {
       {renderContent()}
       <Pagination
         currentPage={currentPage}
-        totalPages={TOTAL_PAGES}
+        totalPages={MOVIE_LIST_TOTAL_PAGES}
         onPageChange={handlePageChange}
       />
     </main>

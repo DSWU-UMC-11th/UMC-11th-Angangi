@@ -1,9 +1,14 @@
+"use client";
+
 import { useMutation } from "@tanstack/react-query";
-import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { useState, type SubmitEvent } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState, type SubmitEvent } from "react";
 import { getApiFailure } from "../../api/api-response";
 import { authMutations } from "../../api/auth/auth-mutations";
 import FormField, { primaryButtonClassName } from "../../components/form-field";
+import { useAuthHydrated } from "../../hooks/use-auth-hydrated";
+import { useAuthStore } from "../../stores/auth-store";
 import { getSafeRedirect } from "../../utils/auth/get-safe-redirect";
 import {
   isEmailValid as checkEmailFormat,
@@ -14,16 +19,28 @@ const DEFAULT_FORM = { email: "", password: "" };
 
 type FormKey = keyof typeof DEFAULT_FORM;
 
-export function LoginPage() {
+interface LoginPageProps {
+  redirect?: string;
+}
+
+export function LoginPage({ redirect }: LoginPageProps) {
   const [form, setForm] = useState(DEFAULT_FORM);
-  const { redirect } = useSearch({ from: "/login" });
-  const navigate = useNavigate();
+  const router = useRouter();
+  const isAuthHydrated = useAuthHydrated();
+  const accessToken = useAuthStore((state) => state.accessToken);
+  const safeRedirect = getSafeRedirect(redirect);
   const loginMutation = useMutation(authMutations.login());
   const isSubmitting = loginMutation.isPending;
   const submitError = loginMutation.isError
     ? (getApiFailure(loginMutation.error)?.message ??
       "로그인에 실패했어요. 다시 시도해 주세요.")
     : null;
+
+  useEffect(() => {
+    if (isAuthHydrated && accessToken) {
+      router.replace(safeRedirect);
+    }
+  }, [isAuthHydrated, accessToken, router, safeRedirect]);
 
   const isEmailValid = checkEmailFormat(form.email);
   const showEmailError = form.email.length > 0 && !isEmailValid;
@@ -44,7 +61,7 @@ export function LoginPage() {
       {
         onSuccess: (response) => {
           alert(`${response.result.nickname}님, 로그인에 성공했어요.`);
-          navigate({ href: getSafeRedirect(redirect), replace: true });
+          router.replace(safeRedirect);
         },
       },
     );
@@ -116,7 +133,7 @@ export function LoginPage() {
           아직 계정이 없나요?{" "}
           <Link
             className="font-bold text-(--color-action-primary) hover:underline"
-            to="/signup"
+            href="/signup"
           >
             회원가입
           </Link>

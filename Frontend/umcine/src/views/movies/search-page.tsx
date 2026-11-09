@@ -1,5 +1,9 @@
+"use client";
+
 import { useQuery } from "@tanstack/react-query";
-import { Link, useNavigate, useSearch } from "@tanstack/react-router";
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useRef, useState, type SubmitEvent } from "react";
 import type { MovieCardItem } from "../../types/movie-card";
 import { movieQueries } from "../../api/movies/movie-queries";
@@ -9,8 +13,11 @@ import { useFavoriteMovieIds } from "../../hooks/use-favorite-movie-ids";
 import { cn } from "../../utils/cn";
 import { toMovieCardItem } from "../../utils/movies/to-movie-card-item";
 
-export function SearchPage() {
-  const { query = "" } = useSearch({ from: "/search" });
+interface SearchPageProps {
+  query: string;
+}
+
+export function SearchPage({ query }: SearchPageProps) {
   const normalizedQuery = query.trim();
 
   if (!normalizedQuery) {
@@ -98,21 +105,22 @@ interface SearchResultItemProps {
 }
 
 function SearchResultItem({ movie, isFavorite }: SearchResultItemProps) {
-  const detailLinkProps = {
-    to: "/movies/$movieId",
-    params: { movieId: String(movie.id) },
-  } as const;
+  const detailHref = `/movies/${movie.id}`;
 
   return (
     <li className="flex gap-5 border-b border-(--color-border-default) py-5">
       <div className="relative w-24 shrink-0 min-[481px]:w-32.75">
-        <Link {...detailLinkProps} tabIndex={-1} aria-hidden="true">
+        <Link href={detailHref} tabIndex={-1} aria-hidden="true">
           {movie.posterUrl ? (
-            <img
-              className="aspect-131/197 w-full rounded-lg bg-(--color-border-default) object-cover"
-              src={movie.posterUrl}
-              alt=""
-            />
+            <span className="relative block aspect-131/197 w-full overflow-hidden rounded-lg bg-(--color-border-default)">
+              <Image
+                className="object-cover"
+                src={movie.posterUrl}
+                alt=""
+                fill
+                sizes="(min-width: 481px) 131px, 96px"
+              />
+            </span>
           ) : (
             <span className="flex aspect-131/197 w-full items-center justify-center rounded-lg bg-(--color-border-default) text-xs text-(--color-text-tertiary)">
               이미지 없음
@@ -128,7 +136,7 @@ function SearchResultItem({ movie, isFavorite }: SearchResultItemProps) {
       </div>
       <div className="flex min-w-0 flex-col pt-1">
         <h3 className="text-lg/[1.4] font-bold">
-          <Link className="hover:underline" {...detailLinkProps}>
+          <Link className="hover:underline" href={detailHref}>
             {movie.title}
           </Link>
         </h3>
@@ -141,7 +149,7 @@ function SearchResultItem({ movie, isFavorite }: SearchResultItemProps) {
         </p>
         <Link
           className="mt-4 inline-flex items-center gap-1 self-start text-xs font-bold text-(--color-action-primary) hover:underline"
-          {...detailLinkProps}
+          href={detailHref}
         >
           상세 보기
           <span
@@ -160,7 +168,7 @@ interface SearchFormProps {
 }
 
 function SearchForm({ initialQuery, variant }: SearchFormProps) {
-  const navigate = useNavigate({ from: "/search" });
+  const router = useRouter();
   const [searchText, setSearchText] = useState(initialQuery);
   const inputRef = useRef<HTMLInputElement>(null);
   const isHero = variant === "hero";
@@ -168,9 +176,9 @@ function SearchForm({ initialQuery, variant }: SearchFormProps) {
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     const nextQuery = searchText.trim();
-    navigate({
-      search: nextQuery ? { query: nextQuery } : {},
-    });
+    router.push(
+      nextQuery ? `/search?query=${encodeURIComponent(nextQuery)}` : "/search",
+    );
   }
 
   function handleClear() {

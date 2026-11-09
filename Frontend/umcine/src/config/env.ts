@@ -1,7 +1,7 @@
-const tmdbApiBaseUrl = import.meta.env.VITE_TMDB_API_BASE_URL;
-const tmdbAccessToken = import.meta.env.VITE_TMDB_ACCESS_TOKEN;
+const tmdbApiBaseUrl = process.env.NEXT_PUBLIC_TMDB_API_BASE_URL;
+const tmdbAccessToken = process.env.NEXT_PUBLIC_TMDB_ACCESS_TOKEN;
 const serverApiBaseUrl =
-  import.meta.env.VITE_SERVER_API_BASE_URL ?? "http://localhost:8080";
+  process.env.NEXT_PUBLIC_SERVER_API_BASE_URL ?? "http://localhost:8080";
 
 if (!tmdbApiBaseUrl || !tmdbAccessToken) {
   throw new Error("TMDB 환경 변수가 필요해요.");
