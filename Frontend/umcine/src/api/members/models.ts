@@ -14,4 +14,11 @@ interface MemberResponse {
   nickname: string;
 }
 
-export type { AvailabilityResponse, MemberResponse, SignupRequest };
+// GET /members/me, PATCH /members/me의 result (서버 MemberInfoResponse)
+interface MemberInfo {
+  email: string;
+  nickname: string;
+  createdAt: string;
+}
+
+export type { AvailabilityResponse, MemberInfo, MemberResponse, SignupRequest };
