@@ -7,7 +7,6 @@ interface BookmarkButtonProps {
   movieId: number;
   movieTitle: string;
   isFavorite: boolean;
-  // icon: 포스터 위에 올리는 아이콘 버튼, label: 상세 화면의 "즐겨찾기" 버튼
   variant?: "icon" | "label";
   className?: string;
 }

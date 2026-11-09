@@ -54,7 +54,6 @@ public class MemberController {
                 .body(ApiResponse.created("회원가입에 성공했습니다.", response));
     }
 
-    // URL에 누구인지가 없어요. @LoginMember가 토큰에서 꺼낸 memberId를 넣어 줘요
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<MemberInfoResponse>> getMyInfo(
             @LoginMember Long memberId

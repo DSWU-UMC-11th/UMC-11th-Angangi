@@ -1,6 +1,5 @@
 USE umc_movie;
 
--- 선택 미션2 페이지네이션 확인용: 1번 회원(수현)의 평점을 12건 더 추가
 INSERT INTO rating (member_id, movie_id, score, comment) VALUES
 (1, 13, 5, '인생 영화'),
 (1, 680, 4, '대사가 기억에 남아요'),

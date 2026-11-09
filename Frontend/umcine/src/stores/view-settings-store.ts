@@ -8,7 +8,6 @@ interface ViewSettingsStore {
   setSortOrder: (sortOrder: MovieSortOrder) => void;
 }
 
-// 서버에 보낼 필요 없이 이 브라우저에서만 기억하면 되는 화면 설정이에요
 export const useViewSettingsStore = create<ViewSettingsStore>()(
   persist(
     (set) => ({

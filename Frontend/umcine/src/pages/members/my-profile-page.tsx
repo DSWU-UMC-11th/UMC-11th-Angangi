@@ -11,7 +11,6 @@ export function MyProfilePage() {
   const meQuery = useQuery(memberQueries.me());
 
   const handleLogout = async () => {
-    // 먼저 이동해야 layout이 /login으로 보내지 않아요
     await navigate({ to: "/" });
     clearSession();
   };

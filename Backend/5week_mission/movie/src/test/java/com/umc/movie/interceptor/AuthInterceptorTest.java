@@ -31,7 +31,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest({MemberController.class, RatingController.class})
 class AuthInterceptorTest {
 
-    // 평점 삭제를 "잠긴 API" 예시로 써요
     private static final String PROTECTED_URL = "/ratings/4";
 
     @Autowired
@@ -73,7 +72,6 @@ class AuthInterceptorTest {
     @Test
     void 위조된_토큰은_AUTH401_3() throws Exception {
         String token = jwtUtil.createAccessToken(1L, "noco@umc.com");
-        // payload 가운데 글자 하나를 다른 글자로 바꿔요 (덧붙이면 Base64 자투리로 무시될 수 있어요)
         int index = token.indexOf('.') + 10;
         char replaced = token.charAt(index) == 'A' ? 'B' : 'A';
         String forged = token.substring(0, index) + replaced + token.substring(index + 1);

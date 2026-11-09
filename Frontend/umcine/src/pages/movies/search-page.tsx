@@ -13,7 +13,6 @@ export function SearchPage() {
   const { query = "" } = useSearch({ from: "/search" });
   const normalizedQuery = query.trim();
 
-  // 검색어가 없으면 요청하지 않고 가운데 정렬된 검색 시작 화면을 보여줘요
   if (!normalizedQuery) {
     return (
       <main className="page-container flex flex-1 flex-col items-center pt-50 pb-20 max-[768px]:pt-30">
@@ -145,7 +144,6 @@ function SearchResultItem({ movie, isFavorite }: SearchResultItemProps) {
           {...detailLinkProps}
         >
           상세 보기
-          {/* 검은색 SVG를 mask로 사용해 글자색(파란색)으로 칠해요 */}
           <span
             className="size-4 bg-current mask-[url(/icons/movie-icons/arrow-right.svg)] mask-contain mask-center mask-no-repeat"
             aria-hidden="true"

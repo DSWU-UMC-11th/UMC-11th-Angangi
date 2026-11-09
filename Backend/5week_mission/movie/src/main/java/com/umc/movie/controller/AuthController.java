@@ -19,7 +19,6 @@ public class AuthController {
 
     private final AuthService authService;
 
-    // /auth/login은 동사형이라 명사형 자원 경로 원칙의 예외예요. 관례상 알아보기 쉬워서 이 이름을 써요
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest request) {
         LoginResponse response = authService.login(request);

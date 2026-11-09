@@ -15,14 +15,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-// 평점 API가 /members 아래와 /ratings로 나뉘어서 클래스 레벨 @RequestMapping("/members")를 뺐어요
 @RestController
 @RequiredArgsConstructor
 public class RatingController {
 
     private final RatingService ratingService;
 
-    // 5주차 공개 조회라 토큰을 받지 않아요 (WebConfig의 공개 경로)
     @GetMapping("/members/{memberId}/ratings")
     public RatingPageResponse getMemberRatings(
             @PathVariable Long memberId,
@@ -37,8 +35,6 @@ public class RatingController {
         return ratingService.getRatingsByMember(memberId, page, size);
     }
 
-    // URL에서 /members/{memberId}가 사라졌어요. 받지 않는 값은 조작할 수도 없어요
-    // memberId는 @LoginMember가 토큰에서 꺼내 넣어 줘요
     @PostMapping("/ratings")
     public ResponseEntity<ApiResponse<RatingResponse>> create(
             @LoginMember Long memberId,
@@ -59,7 +55,6 @@ public class RatingController {
         return ResponseEntity.ok(ApiResponse.ok("평점 수정에 성공했습니다.", response));
     }
 
-    // 204는 본문을 보낼 수 없어서 공통 응답 형식을 지키려고 200 + result null로 바꿨어요
     @DeleteMapping("/ratings/{ratingId}")
     public ResponseEntity<ApiResponse<Void>> delete(
             @LoginMember Long memberId,

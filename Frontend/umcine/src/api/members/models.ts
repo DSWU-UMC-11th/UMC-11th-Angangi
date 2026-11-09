@@ -14,7 +14,6 @@ interface MemberResponse {
   nickname: string;
 }
 
-// GET /members/me, PATCH /members/me의 result (서버 MemberInfoResponse)
 interface MemberInfo {
   email: string;
   nickname: string;

@@ -30,8 +30,8 @@ class LoginMemberArgumentResolverTest {
     @Test
     void LoginMember가_붙은_Long_파라미터만_맡는다() throws Exception {
         assertThat(resolver.supportsParameter(parameter(0))).isTrue();
-        assertThat(resolver.supportsParameter(parameter(1))).isFalse(); // 어노테이션 없음
-        assertThat(resolver.supportsParameter(parameter(2))).isFalse(); // 타입이 Long이 아님
+        assertThat(resolver.supportsParameter(parameter(1))).isFalse();
+        assertThat(resolver.supportsParameter(parameter(2))).isFalse();
     }
 
     @Test

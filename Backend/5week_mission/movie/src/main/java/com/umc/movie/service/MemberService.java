@@ -61,17 +61,14 @@ public class MemberService {
     public MemberInfoResponse updateMyInfo(Long memberId, MemberUpdateRequest request) {
         Member member = findMember(memberId);
 
-        // 지금 내 닉네임 그대로 보내도 중복으로 막히지 않도록 나 자신은 빼고 확인해요.
-        // 회원가입과 같은 상황이라 같은 코드(MEMBER4092)를 써요. 동시에 바꾸는 경우는 DB UNIQUE 제약이 막아요
         if (memberRepository.existsByNicknameAndMemberIdNot(request.nickname(), memberId)) {
             throw new BusinessException(ErrorCode.MEMBER_NICKNAME_DUPLICATED);
         }
 
-        member.updateNickname(request.nickname()); // 변경 감지로 트랜잭션이 끝날 때 UPDATE돼요
+        member.updateNickname(request.nickname());
         return MemberInfoResponse.from(member);
     }
 
-    // 토큰은 유효하지만 그사이 탈퇴 등으로 회원이 없어졌을 수 있어요
     private Member findMember(Long memberId) {
         return memberRepository.findById(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));

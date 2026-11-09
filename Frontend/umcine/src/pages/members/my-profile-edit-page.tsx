@@ -15,11 +15,9 @@ import {
   VALIDATION_MESSAGE,
 } from "../../utils/members/validation";
 
-// 다른 회원이 쓰는 닉네임이면 서버가 409와 이 code를 줘요 (회원가입과 같은 code)
 const NICKNAME_DUPLICATED_CODE = "MEMBER4092";
 
 export function MyProfileEditPage() {
-  // (protected) layout을 통과했으니 토큰이 있어요
   const meQuery = useQuery(memberQueries.me());
 
   if (meQuery.isPending) {
@@ -34,7 +32,6 @@ export function MyProfileEditPage() {
     );
   }
 
-  // 폼 state의 첫 값을 서버 데이터로 채우려고, 데이터가 준비된 뒤에 폼을 그려요
   return <MyProfileEditForm profile={meQuery.data} />;
 }
 
@@ -49,7 +46,6 @@ function MyProfileEditForm({ profile }: { profile: MemberInfo }) {
   const isNicknameChanged = trimmedNickname !== profile.nickname;
   const canSubmit = isNicknameValid && isNicknameChanged;
 
-  // 닉네임 중복은 입력창 아래에, 그 밖의 실패는 폼 아래에 보여줘요
   const failure = getApiFailure(updateMeMutation.error);
   const isDuplicated = failure?.code === NICKNAME_DUPLICATED_CODE;
   let nicknameMessage: FieldMessage | null = null;
@@ -78,7 +74,6 @@ function MyProfileEditForm({ profile }: { profile: MemberInfo }) {
       {
         onSuccess: () => {
           alert("내 정보를 수정했어요.");
-          // 캐시가 이미 새 닉네임이라 /my에서 다시 요청하지 않고 바로 보여줘요
           navigate({ to: "/my" });
         },
       },

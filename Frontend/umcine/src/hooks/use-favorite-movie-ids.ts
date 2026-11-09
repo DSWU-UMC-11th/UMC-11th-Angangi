@@ -4,7 +4,6 @@ import { useAuthStore } from "../stores/auth-store";
 
 const EMPTY_IDS = new Set<number>();
 
-// 카드마다 여부를 조회하지 않고 GET /favorites 한 번의 결과를 함께 써요
 export function useFavoriteMovieIds() {
   const accessToken = useAuthStore((state) => state.accessToken);
   const favoritesQuery = useQuery({

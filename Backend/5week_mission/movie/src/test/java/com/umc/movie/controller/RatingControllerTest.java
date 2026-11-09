@@ -85,7 +85,6 @@ class RatingControllerTest {
         given(ratingService.getRatingsByMember(999L, 0, 10))
                 .willThrow(new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
-        // 공개 API라 토큰 없이 불러도 401이 아니라 404예요
         mockMvc.perform(get("/members/{memberId}/ratings", 999))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("MEMBER404_1"));

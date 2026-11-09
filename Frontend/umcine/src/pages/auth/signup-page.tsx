@@ -42,7 +42,6 @@ const DUPLICATE_CHECK_REQUEST = {
   nickname: checkNickname,
 };
 
-// 중복 확인 뒤 다른 사람이 먼저 가입하면 서버가 409로 알려줘요 (6주차 서버 ErrorCode)
 const DUPLICATED_CODE_TO_KEY: Record<string, DuplicateCheckKey> = {
   MEMBER4091: "email",
   MEMBER4092: "nickname",
@@ -73,7 +72,6 @@ export function SignupPage() {
   const [duplicateCheck, setDuplicateCheck] = useState<
     Record<DuplicateCheckKey, DuplicateCheckStatus>
   >({ email: "idle", nickname: "idle" });
-  // 7주차의 isSubmitting, submitError state는 mutation의 isPending, error로 대신해요
   const signupMutation = useSignupMutation();
   const isSubmitting = signupMutation.isPending;
   const submitError = signupMutation.isError
@@ -81,7 +79,6 @@ export function SignupPage() {
       "회원가입에 실패했어요. 다시 시도해 주세요.")
     : null;
 
-  // 입력값의 유효성 검사
   const trimmedEmail = form.email.trim();
   const trimmedNickname = form.nickname.trim();
   const isEmailValid = checkEmailFormat(form.email);
@@ -90,21 +87,18 @@ export function SignupPage() {
   const isPasswordConfirmValid =
     form.passwordConfirm.length > 0 && form.password === form.passwordConfirm;
 
-  // 입력을 시작한 필드에만 오류 표시
   const showEmailError = form.email.length > 0 && !isEmailValid;
   const showNicknameError = form.nickname.length > 0 && !isNicknameValid;
   const showPasswordError = form.password.length > 0 && !isPasswordValid;
   const showPasswordConfirmError =
     form.passwordConfirm.length > 0 && !isPasswordConfirmValid;
 
-  // 모든 입력값이 유효하면 제출 버튼 활성화
   const isFormValid =
     isEmailValid &&
     isNicknameValid &&
     isPasswordValid &&
     isPasswordConfirmValid;
 
-  // 입력 조건과 두 중복 확인을 모두 통과해야 제출 가능
   const canSubmit =
     isFormValid &&
     duplicateCheck.email === "available" &&
@@ -112,11 +106,9 @@ export function SignupPage() {
 
   const handleChangeField = (key: FormKey, value: string) => {
     if (isSubmitting) return;
-    // 값을 고치기 시작하면 이전 실패 안내를 지워요
     if (signupMutation.isError) signupMutation.reset();
     if (key === "email" || key === "nickname") {
       if (duplicateCheck[key] === "checking") return;
-      // 확인한 값을 바꾸면 다시 중복 확인해야 해요
       setDuplicateCheck((prev) => ({ ...prev, [key]: "idle" }));
     }
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -140,7 +132,6 @@ export function SignupPage() {
   };
 
   const handleSubmit = (event: SubmitEvent<HTMLFormElement>) => {
-    // 폼 제출 시 페이지 새로고침 방지
     event.preventDefault();
     if (!canSubmit || isSubmitting) return;
 
@@ -151,7 +142,6 @@ export function SignupPage() {
         password: form.password,
       },
       {
-        // 중복 필드 표시는 이 화면의 state라서 hook이 아니라 mutate 쪽 콜백에서 처리해요
         onError: (error) => {
           const failure = getApiFailure(error);
           const duplicatedKey = failure && DUPLICATED_CODE_TO_KEY[failure.code];
@@ -173,7 +163,6 @@ export function SignupPage() {
           UMCine에서 영화 기록을 시작해 보세요.
         </p>
 
-        {/* noValidate는 폼 제출 시 브라우저의 기본 유효성 검사를 꺼요 */}
         <form
           className="mt-8 flex flex-col gap-5 rounded-xl border border-(--color-border-default) bg-(--color-bg-surface) p-6 min-[481px]:p-8"
           onSubmit={handleSubmit}

@@ -19,7 +19,6 @@ function isValidMovieId(movieId: number) {
   return Number.isInteger(movieId) && movieId > 0;
 }
 
-// 145분 → "2시간 25분"
 function formatRuntime(runtime: number | null) {
   if (runtime === null) return "상영 시간 정보가 없어요.";
 
@@ -40,7 +39,6 @@ export function MovieDetailPage() {
     enabled: isValid,
   });
 
-  // 요청하지 않아도 isPending이 참이라 잘못된 번호 안내를 로딩보다 먼저 확인해요
   if (!isValid) {
     return <DetailMessage message="올바르지 않은 영화 번호예요." />;
   }
@@ -56,7 +54,6 @@ export function MovieDetailPage() {
     );
   }
 
-  // 영화가 바뀌면 평점 입력 폼의 state도 처음 상태로 돌아가도록 key를 줘요
   return <MovieDetailContent key={movieId} movie={movieDetailQuery.data} />;
 }
 
@@ -72,7 +69,6 @@ function MovieDetailContent({ movie }: { movie: TmdbMovieDetail }) {
 
   return (
     <main className="flex-1 pb-20">
-      {/* 상단 배경 영역 */}
       <section className="relative h-80 overflow-hidden bg-(--color-text-primary) text-(--color-bg-surface) min-[641px]:h-[408px]">
         {backdropUrl ? (
           <img
@@ -86,7 +82,6 @@ function MovieDetailContent({ movie }: { movie: TmdbMovieDetail }) {
             이미지 없음
           </div>
         )}
-        {/* 흰 글자가 배경 이미지 위에서도 읽히도록 왼쪽 아래를 어둡게 */}
         <div
           className="absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.6),transparent_60%),linear-gradient(to_right,rgba(0,0,0,0.45),transparent_60%)]"
           aria-hidden="true"
@@ -96,7 +91,6 @@ function MovieDetailContent({ movie }: { movie: TmdbMovieDetail }) {
             className="inline-flex items-center gap-1 self-start text-sm font-bold hover:underline"
             to="/"
           >
-            {/* 검은색 아이콘을 흰색으로 표시 */}
             <img
               className="size-5 brightness-0 invert"
               src="/icons/movie-icons/chevron-left.svg"
@@ -118,7 +112,6 @@ function MovieDetailContent({ movie }: { movie: TmdbMovieDetail }) {
         </div>
       </section>
 
-      {/* 하단 정보 영역 */}
       <div className="page-container grid grid-cols-1 items-start gap-6 pt-7 min-[641px]:grid-cols-[200px_minmax(0,1fr)] min-[641px]:gap-9 min-[1025px]:grid-cols-[226px_minmax(0,1fr)_406px]">
         {posterUrl ? (
           <img
@@ -188,7 +181,6 @@ function RatingForm() {
 
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    // TODO: 서버 API가 생기면 평점 저장 요청 보내기
     setIsSaved(true);
   }
 

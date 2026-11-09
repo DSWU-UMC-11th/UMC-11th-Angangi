@@ -125,7 +125,6 @@ class RatingServiceTest {
     void 없는_평점은_주인을_따지기_전에_RATING404_1() {
         given(ratingRepository.findById(999L)).willReturn(Optional.empty());
 
-        // 남의 회원 번호로 요청해도 403이 아니라 404예요. 없는 것에 "권한 없음"이라고 답하지 않아요
         assertErrorCode(() -> ratingService.update(OTHER_ID, 999L, new UpdateRatingRequest(1, null)),
                 ErrorCode.RATING_NOT_FOUND);
         assertErrorCode(() -> ratingService.delete(OWNER_ID, 999L), ErrorCode.RATING_NOT_FOUND);

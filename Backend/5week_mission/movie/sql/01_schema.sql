@@ -22,7 +22,6 @@ CREATE TABLE rating (
     UNIQUE KEY uk_rating_member_movie (member_id, movie_id)
 );
 
--- 8주차 즐겨찾기 실습에서 사용할 테이블. 이번 주차에는 스키마만 만들어 둠
 CREATE TABLE favorite (
     favorite_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     member_id   BIGINT   NOT NULL,

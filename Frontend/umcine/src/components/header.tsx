@@ -13,16 +13,13 @@ const activeNavLinkClassName =
 
 export default function Header() {
   const matchRoute = useMatchRoute();
-  // 영화 상세(/movies/$movieId)에서도 "영화" 메뉴를 활성화해요
   const isMoviesActive = Boolean(
     matchRoute({ to: "/" }) || matchRoute({ to: "/movies/$movieId" }),
   );
   const isSearchActive = Boolean(matchRoute({ to: "/search" }));
-  // /my/edit, /my/ratings에서도 "내 정보" 메뉴를 활성화해요
   const isMyActive = Boolean(matchRoute({ to: "/my", fuzzy: true }));
 
   const accessToken = useAuthStore((state) => state.accessToken);
-  // 토큰이 있을 때만 조회해요. 토큰이 유효한지는 이 요청의 응답(401)으로 확인해요
   const meQuery = useQuery({
     ...memberQueries.me(),
     enabled: Boolean(accessToken),
@@ -34,7 +31,6 @@ export default function Header() {
         <Link
           className="flex items-center gap-2.5 text-xl font-extrabold tracking-[-0.02em] text-(--color-text-primary) no-underline"
           to="/"
-          // 기본값(fuzzy)이면 "/"가 모든 경로에서 활성으로 판정돼요
           activeOptions={{ exact: true }}
         >
           <span className="flex size-8 items-center justify-center rounded-lg border-2 border-(--color-text-primary)">
@@ -79,7 +75,6 @@ export default function Header() {
               </Link>
             </>
           ) : meQuery.isLoading ? (
-            // enabled가 꺼져 있어도 isPending은 참이라, 실제 첫 요청 중인지는 isLoading으로 봐요
             <span
               className="h-10 w-24 animate-pulse rounded-md bg-(--color-border-default)"
               aria-label="내 정보를 불러오는 중"
@@ -101,8 +96,6 @@ interface NavLinkProps {
   children: string;
 }
 
-// Link는 자기 기준으로 활성이면 aria-current="page"를 강제로 붙여요.
-// exact로 판정 범위를 좁혀 isActive와 어긋나지 않게 해요.
 function NavLink({ to, isActive, children }: NavLinkProps) {
   return (
     <Link

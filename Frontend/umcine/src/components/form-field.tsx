@@ -12,10 +12,8 @@ interface FormFieldProps extends Omit<
 > {
   id: string;
   label: string;
-  // public/icons/movie-icons 아래 아이콘 파일 이름 (예: "mail")
   icon?: string;
   message?: FieldMessage | null;
-  // 입력창 오른쪽에 붙는 버튼 (예: 중복 확인)
   action?: ReactNode;
 }
 

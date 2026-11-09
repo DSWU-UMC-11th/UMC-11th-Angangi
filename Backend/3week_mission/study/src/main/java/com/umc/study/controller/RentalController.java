@@ -20,7 +20,6 @@ public class RentalController {
 
     private final RentalService rentalService;
 
-    // POST /rentals 요청 처리 (생성 성공 시 201 Created 응답)
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public String createRental(@RequestBody Map<String, Object> body) {
@@ -28,7 +27,6 @@ public class RentalController {
         return "도서 대여가 완료되었습니다!";
     }
 
-    // PATCH /rentals/{rentalId}/return 요청 처리 (반납일을 현재 시간으로 갱신)
     @PatchMapping("/{rentalId}/return")
     public String returnRental(@PathVariable Long rentalId) {
         rentalService.returnRental(rentalId);

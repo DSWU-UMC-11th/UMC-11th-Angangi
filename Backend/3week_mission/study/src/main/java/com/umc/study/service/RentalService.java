@@ -21,7 +21,6 @@ public class RentalService {
     public void returnRental(Long rentalId) {
         int updatedRows = rentalRepository.updateReturnedAt(rentalId);
 
-        // 바뀐 행이 없으면 존재하지 않는 대여 기록이므로 404 응답
         if (updatedRows == 0) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 대여 기록입니다.");
         }
