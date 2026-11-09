@@ -1,3 +1,4 @@
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useState, type SubmitEvent } from "react";
 import { checkEmail } from "../../api/members/check-email";
 import { checkNickname } from "../../api/members/check-nickname";
@@ -8,14 +9,12 @@ import FormField, {
   secondaryButtonClassName,
   type FieldMessage,
 } from "../../components/form-field";
-
-// 이메일 형식 검사
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-// 영문 대소문자, 숫자, 특수문자(!@#$%^&*)를 모두 포함해 8자 이상
-const PASSWORD_REGEX =
-  /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])[A-Za-z0-9!@#$%^&*]{8,}$/;
-const NICKNAME_MIN_LENGTH = 2;
-const NICKNAME_MAX_LENGTH = 12;
+import {
+  isEmailValid as checkEmailFormat,
+  isNicknameValid as checkNicknameFormat,
+  isPasswordValid as checkPasswordFormat,
+  VALIDATION_MESSAGE,
+} from "../../utils/members/validation";
 
 const DEFAULT_FORM = {
   email: "",
@@ -76,16 +75,14 @@ export function SignupPage() {
   >({ email: "idle", nickname: "idle" });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
 
   // 입력값의 유효성 검사
   const trimmedEmail = form.email.trim();
   const trimmedNickname = form.nickname.trim();
-  const isEmailValid = EMAIL_REGEX.test(trimmedEmail);
-  const isNicknameValid =
-    trimmedNickname.length >= NICKNAME_MIN_LENGTH &&
-    trimmedNickname.length <= NICKNAME_MAX_LENGTH;
-  const isPasswordValid = PASSWORD_REGEX.test(form.password);
+  const isEmailValid = checkEmailFormat(form.email);
+  const isNicknameValid = checkNicknameFormat(form.nickname);
+  const isPasswordValid = checkPasswordFormat(form.password);
   const isPasswordConfirmValid =
     form.passwordConfirm.length > 0 && form.password === form.passwordConfirm;
 
@@ -151,10 +148,7 @@ export function SignupPage() {
         password: form.password,
       });
       alert(response.message);
-      setForm(DEFAULT_FORM);
-      setDuplicateCheck({ email: "idle", nickname: "idle" });
-      // 로그인 페이지 연결 후 주석 해제
-      // navigate({ to: "/login" });
+      navigate({ to: "/login" });
     } catch (error) {
       // 실패하면 입력값을 유지한 채 서버의 메시지를 보여줘요
       const failure = getApiFailure(error);
@@ -198,7 +192,7 @@ export function SignupPage() {
             onChange={(event) => handleChangeField("email", event.target.value)}
             message={
               showEmailError
-                ? { tone: "error", text: "이메일 형식을 확인해 주세요." }
+                ? { tone: "error", text: VALIDATION_MESSAGE.email }
                 : getDuplicateCheckMessage(duplicateCheck.email, "email")
             }
             action={
@@ -223,10 +217,7 @@ export function SignupPage() {
             }
             message={
               showNicknameError
-                ? {
-                    tone: "error",
-                    text: `닉네임은 ${NICKNAME_MIN_LENGTH}~${NICKNAME_MAX_LENGTH}자로 입력해 주세요.`,
-                  }
+                ? { tone: "error", text: VALIDATION_MESSAGE.nickname }
                 : getDuplicateCheckMessage(duplicateCheck.nickname, "nickname")
             }
             action={
@@ -251,10 +242,7 @@ export function SignupPage() {
             }
             message={
               showPasswordError
-                ? {
-                    tone: "error",
-                    text: "영문 대소문자, 숫자, 특수문자(!@#$%^&*)를 모두 포함해 8자 이상 입력해 주세요.",
-                  }
+                ? { tone: "error", text: VALIDATION_MESSAGE.password }
                 : null
             }
           />
@@ -272,7 +260,7 @@ export function SignupPage() {
             }
             message={
               showPasswordConfirmError
-                ? { tone: "error", text: "비밀번호가 일치하지 않아요." }
+                ? { tone: "error", text: VALIDATION_MESSAGE.passwordConfirm }
                 : null
             }
           />
@@ -301,10 +289,12 @@ export function SignupPage() {
 
         <p className="mt-6 text-center text-sm text-(--color-text-secondary)">
           이미 계정이 있나요?{" "}
-          {/* TODO: 필수 미션에서 /login 라우트를 만든 뒤 Link로 바꾸기 */}
-          <span className="font-bold text-(--color-text-primary)">
+          <Link
+            className="font-bold text-(--color-action-primary) hover:underline"
+            to="/login"
+          >
             로그인
-          </span>
+          </Link>
         </p>
       </div>
     </main>

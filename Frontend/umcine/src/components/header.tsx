@@ -13,7 +13,8 @@ export default function Header() {
     matchRoute({ to: "/" }) || matchRoute({ to: "/movies/$movieId" }),
   );
   const isSearchActive = Boolean(matchRoute({ to: "/search" }));
-  const isMyActive = Boolean(matchRoute({ to: "/my" }));
+  // /my/edit, /my/ratings에서도 "내 정보" 메뉴를 활성화해요
+  const isMyActive = Boolean(matchRoute({ to: "/my", fuzzy: true }));
 
   return (
     <header className="border-b border-(--color-border-default) bg-(--color-bg-surface)">
@@ -59,12 +60,12 @@ export default function Header() {
           >
             회원가입
           </Link>
-          <button
-            type="button"
-            className="h-10 rounded-md bg-(--color-action-primary) px-4 text-sm font-bold text-(--color-bg-surface) hover:bg-(--color-action-hover) active:bg-(--color-action-pressed)"
+          <Link
+            className="flex h-10 items-center rounded-md bg-(--color-action-primary) px-4 text-sm font-bold text-(--color-bg-surface) no-underline hover:bg-(--color-action-hover) active:bg-(--color-action-pressed)"
+            to="/login"
           >
             로그인
-          </button>
+          </Link>
         </div>
       </div>
     </header>
