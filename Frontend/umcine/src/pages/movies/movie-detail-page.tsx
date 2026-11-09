@@ -1,12 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link, useParams } from "@tanstack/react-router";
+import { Link, useLocation, useParams } from "@tanstack/react-router";
 import { useState, type SubmitEvent } from "react";
 import { favoriteQueries } from "../../api/favorites/favorite-queries";
 import { movieQueries } from "../../api/movies/movie-queries";
 import type { TmdbMovieDetail } from "../../api/movies/models";
+import type { MemberRating } from "../../api/ratings/models";
+import { ratingQueries } from "../../api/ratings/rating-queries";
 import { BookmarkButton } from "../../components/bookmark-button";
+import { useMyMemberId } from "../../hooks/use-my-member-id";
+import {
+  useDeleteRatingMutation,
+  useSaveRatingMutation,
+} from "../../hooks/use-rating-mutations";
 import { useAuthStore } from "../../stores/auth-store";
 import { cn } from "../../utils/cn";
+import { formatDate } from "../../utils/members/format-date";
 import { getMovieDetailErrorMessage } from "../../utils/movies/get-movie-detail-error-message";
 import {
   getTmdbBackdropUrl,
@@ -143,7 +151,7 @@ function MovieDetailContent({ movie }: { movie: TmdbMovieDetail }) {
           />
         </section>
 
-        <RatingForm />
+        <RatingSection movieId={movie.id} />
       </div>
     </main>
   );
@@ -174,46 +182,144 @@ function DetailMessage({ message, onRetry }: DetailMessageProps) {
   );
 }
 
-function RatingForm() {
-  const [rating, setRating] = useState(0);
-  const [review, setReview] = useState("");
-  const [isSaved, setIsSaved] = useState(false);
+const COMMENT_MAX_LENGTH = 500;
+
+const ratingSectionClassName =
+  "col-span-full border-t border-(--color-border-default) pt-7 min-[1025px]:col-auto min-[1025px]:border-t-0 min-[1025px]:border-l min-[1025px]:pt-0 min-[1025px]:pl-[34px]";
+
+function RatingSection({ movieId }: { movieId: number }) {
+  const memberId = useMyMemberId();
+  const location = useLocation();
+
+  return (
+    <section className={ratingSectionClassName} aria-labelledby="my-rating-title">
+      <h2 id="my-rating-title" className="text-[22px] font-extrabold">
+        내 평점
+      </h2>
+      {memberId === null ? (
+        <p className="mt-3 text-sm text-(--color-text-secondary)">
+          평점은 로그인 후 남길 수 있어요.{" "}
+          <Link
+            className="font-bold text-(--color-action-primary) underline"
+            to="/login"
+            search={{ redirect: location.href }}
+          >
+            로그인하러 가기
+          </Link>
+        </p>
+      ) : (
+        <MyRating memberId={memberId} movieId={movieId} />
+      )}
+    </section>
+  );
+}
+
+interface MyRatingProps {
+  memberId: number;
+  movieId: number;
+}
+
+function MyRating({ memberId, movieId }: MyRatingProps) {
+  const ratingQuery = useQuery(ratingQueries.memberMovie(memberId, movieId));
+
+  if (ratingQuery.isPending) {
+    return (
+      <p className="mt-3 text-sm text-(--color-text-secondary)">
+        내 평점을 불러오는 중이에요.
+      </p>
+    );
+  }
+  if (ratingQuery.isError) {
+    return (
+      <div className="mt-3 flex items-center gap-3 text-sm text-(--color-text-secondary)">
+        <p>내 평점을 불러오지 못했어요.</p>
+        <button
+          type="button"
+          className="font-bold text-(--color-action-primary) underline"
+          onClick={() => ratingQuery.refetch()}
+        >
+          다시 시도
+        </button>
+      </div>
+    );
+  }
+
+  const rating = ratingQuery.data;
+  return (
+    <RatingForm
+      key={rating?.ratingId ?? "new"}
+      memberId={memberId}
+      movieId={movieId}
+      rating={rating}
+    />
+  );
+}
+
+interface RatingFormProps extends MyRatingProps {
+  rating: MemberRating | null;
+}
+
+function RatingForm({ memberId, movieId, rating }: RatingFormProps) {
+  const [score, setScore] = useState(rating?.score ?? 0);
+  const [comment, setComment] = useState(rating?.comment ?? "");
+  const saveMutation = useSaveRatingMutation(memberId, movieId);
+  const deleteMutation = useDeleteRatingMutation(memberId, movieId);
+  const isPending = saveMutation.isPending || deleteMutation.isPending;
+
+  const trimmedComment = comment.trim();
+  const isChanged =
+    rating === null ||
+    score !== rating.score ||
+    trimmedComment !== (rating.comment ?? "");
+  const canSubmit =
+    score > 0 &&
+    comment.length <= COMMENT_MAX_LENGTH &&
+    isChanged &&
+    !isPending;
 
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    setIsSaved(true);
+    if (!canSubmit) return;
+
+    saveMutation.mutate({
+      ratingId: rating?.ratingId ?? null,
+      score,
+      comment: trimmedComment || null,
+    });
+  }
+
+  function handleDelete() {
+    if (!rating || isPending) return;
+    if (!confirm("이 영화에 남긴 평점을 삭제할까요?")) return;
+    deleteMutation.mutate(rating.ratingId);
   }
 
   return (
-    <form
-      className="col-span-full border-t border-(--color-border-default) pt-7 min-[1025px]:col-auto min-[1025px]:border-t-0 min-[1025px]:border-l min-[1025px]:pt-0 min-[1025px]:pl-[34px]"
-      onSubmit={handleSubmit}
-    >
-      <h2 className="text-[22px] font-extrabold">내 평점</h2>
+    <form onSubmit={handleSubmit}>
       <p className="mt-2 text-[13px] text-(--color-text-tertiary)">
-        별점은 필수, 후기는 선택이에요.
+        {rating
+          ? `${formatDate(rating.updatedAt)}에 남긴 평점이에요.`
+          : "별점은 필수, 후기는 선택이에요."}
       </p>
 
       <div className="mt-3 flex gap-[5px]" role="group" aria-label="별점">
         {RATINGS.map((value) => {
-          const isSelected = value <= rating;
+          const isSelected = value <= score;
 
           return (
             <button
               key={value}
               type="button"
               className={cn(
-                "flex size-[43px] items-center justify-center rounded-md border bg-(--color-bg-surface) p-0",
+                "flex size-[43px] items-center justify-center rounded-md border bg-(--color-bg-surface) p-0 disabled:cursor-not-allowed",
                 isSelected
                   ? "border-(--color-text-primary)"
                   : "border-(--color-border-default) hover:border-(--color-text-tertiary)",
               )}
               aria-label={`${value}점`}
               aria-pressed={isSelected}
-              onClick={() => {
-                setRating(value);
-                setIsSaved(false);
-              }}
+              disabled={isPending}
+              onClick={() => setScore(value)}
             >
               <img
                 className="size-6"
@@ -230,28 +336,43 @@ function RatingForm() {
       </div>
 
       <textarea
-        className="mt-2 block h-[116px] w-full resize-y rounded-lg border border-(--color-border-default) bg-(--color-bg-surface) p-3.5 text-sm text-(--color-text-primary) placeholder:text-(--color-text-tertiary) focus:outline-2 focus:-outline-offset-1 focus:outline-(--color-action-primary)"
+        className="mt-2 block h-[116px] w-full resize-y rounded-lg border border-(--color-border-default) bg-(--color-bg-surface) p-3.5 text-sm text-(--color-text-primary) placeholder:text-(--color-text-tertiary) focus:outline-2 focus:-outline-offset-1 focus:outline-(--color-action-primary) disabled:bg-(--color-bg-page)"
         aria-label="후기"
         placeholder="영화를 보고 느낀 점을 남겨보세요."
-        value={review}
-        onChange={(event) => {
-          setReview(event.target.value);
-          setIsSaved(false);
-        }}
+        value={comment}
+        disabled={isPending}
+        onChange={(event) => setComment(event.target.value)}
       />
-
-      <button
-        type="submit"
-        className="mt-2.5 h-[46px] w-full rounded-md bg-(--color-text-primary) text-[15px] font-bold text-(--color-bg-surface) disabled:cursor-not-allowed disabled:opacity-40"
-        disabled={!rating}
+      <p
+        className={cn(
+          "mt-1 text-right text-xs",
+          comment.length > COMMENT_MAX_LENGTH
+            ? "text-(--color-danger-default)"
+            : "text-(--color-text-tertiary)",
+        )}
       >
-        평점 저장
-      </button>
-      {isSaved && (
-        <p className="mt-2 text-[13px] text-(--color-action-primary)" role="status">
-          평점을 저장했어요.
-        </p>
-      )}
+        {comment.length}/{COMMENT_MAX_LENGTH}
+      </p>
+
+      <div className="mt-2 flex gap-2">
+        {rating && (
+          <button
+            type="button"
+            className="h-[46px] flex-1 rounded-md border border-(--color-border-default) text-[15px] font-bold text-(--color-danger-default) hover:bg-(--color-bg-page) disabled:cursor-not-allowed disabled:opacity-40"
+            disabled={isPending}
+            onClick={handleDelete}
+          >
+            {deleteMutation.isPending ? "삭제 중" : "삭제"}
+          </button>
+        )}
+        <button
+          type="submit"
+          className="h-[46px] flex-2 rounded-md bg-(--color-text-primary) text-[15px] font-bold text-(--color-bg-surface) disabled:cursor-not-allowed disabled:opacity-40"
+          disabled={!canSubmit}
+        >
+          {saveMutation.isPending ? "저장 중" : rating ? "평점 수정" : "평점 저장"}
+        </button>
+      </div>
     </form>
   );
 }

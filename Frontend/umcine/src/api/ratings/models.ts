@@ -16,4 +16,18 @@ interface MemberRatingPage {
   hasNext: boolean;
 }
 
-export type { MemberRating, MemberRatingPage };
+interface RatingContent {
+  score: number;
+  comment: string | null;
+}
+
+interface CreateRatingRequest extends RatingContent {
+  movieId: number;
+}
+
+export type {
+  CreateRatingRequest,
+  MemberRating,
+  MemberRatingPage,
+  RatingContent,
+};
