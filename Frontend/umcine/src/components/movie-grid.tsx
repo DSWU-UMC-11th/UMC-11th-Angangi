@@ -1,3 +1,5 @@
+"use client";
+
 import { useFavoriteMovieIds } from "../hooks/use-favorite-movie-ids";
 import type { MovieCardItem } from "../types/movie-card";
 import MovieCard from "./movie-card";

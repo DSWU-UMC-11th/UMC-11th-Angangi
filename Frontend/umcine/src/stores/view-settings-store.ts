@@ -17,6 +17,7 @@ export const useViewSettingsStore = create<ViewSettingsStore>()(
     {
       name: "umcine-view-settings",
       storage: createJSONStorage(() => localStorage),
+      skipHydration: true,
       partialize: (state) => ({ sortOrder: state.sortOrder }),
     },
   ),
