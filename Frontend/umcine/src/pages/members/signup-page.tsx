@@ -1,19 +1,28 @@
+import { isHTTPError } from "ky";
 import { useState } from "react";
 import { checkEmail } from "../../api/members/check-email";
 import { checkNickname } from "../../api/members/check-nickname";
 import type { AvailabilityResponse } from "../../api/members/models";
 import { cn } from "../../utils/cn";
 
-type CheckStatus = "idle" | "checking" | "available" | "taken" | "error";
+type CheckStatus =
+  | "idle"
+  | "checking"
+  | "available"
+  | "taken"
+  | "invalid"
+  | "error";
 
-const STATUS_MESSAGES: Record<
-  Exclude<CheckStatus, "idle" | "checking">,
-  (label: string) => string
-> = {
-  available: (label) => `사용할 수 있는 ${label}이에요.`,
-  taken: (label) => `이미 사용 중인 ${label}이에요.`,
-  error: () => "서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.",
-};
+function getStatusMessage(
+  status: Exclude<CheckStatus, "idle" | "checking">,
+  label: string,
+  invalidMessage: string,
+) {
+  if (status === "available") return `사용할 수 있는 ${label}이에요.`;
+  if (status === "taken") return `이미 사용 중인 ${label}이에요.`;
+  if (status === "invalid") return invalidMessage;
+  return "서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.";
+}
 
 export function SignupPage() {
   return (
@@ -25,19 +34,21 @@ export function SignupPage() {
         가입하기 전에 닉네임과 이메일이 이미 사용 중인지 확인해요.
       </p>
 
-      <div className="mt-8 flex max-w-[480px] flex-col gap-6">
+      <div className="mt-8 flex max-w-120 flex-col gap-6">
         <DuplicateCheckField
           id="signup-email"
           label="이메일"
           type="email"
           placeholder="umc@example.com"
+          invalidMessage="이메일 형식이 올바르지 않아요."
           check={checkEmail}
         />
         <DuplicateCheckField
           id="signup-nickname"
           label="닉네임"
           type="text"
-          placeholder="닉네임을 입력해 주세요"
+          placeholder="2~12자로 입력해 주세요"
+          invalidMessage="닉네임은 2~12자로 입력해 주세요."
           check={checkNickname}
         />
       </div>
@@ -50,6 +61,7 @@ interface DuplicateCheckFieldProps {
   label: string;
   type: "email" | "text";
   placeholder: string;
+  invalidMessage: string;
   check: (value: string) => Promise<AvailabilityResponse>;
 }
 
@@ -58,6 +70,7 @@ function DuplicateCheckField({
   label,
   type,
   placeholder,
+  invalidMessage,
   check,
 }: DuplicateCheckFieldProps) {
   const [value, setValue] = useState("");
@@ -69,8 +82,9 @@ function DuplicateCheckField({
     try {
       const { available } = await check(trimmedValue);
       setStatus(available ? "available" : "taken");
-    } catch {
-      setStatus("error");
+    } catch (error) {
+      const isInvalid = isHTTPError(error) && error.response.status === 400;
+      setStatus(isInvalid ? "invalid" : "error");
     }
   }
 
@@ -110,7 +124,7 @@ function DuplicateCheckField({
           )}
           role="status"
         >
-          {STATUS_MESSAGES[status](label)}
+          {getStatusMessage(status, label, invalidMessage)}
         </p>
       )}
     </div>
