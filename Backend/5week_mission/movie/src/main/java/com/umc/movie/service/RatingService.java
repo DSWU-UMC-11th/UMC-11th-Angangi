@@ -23,7 +23,6 @@ public class RatingService {
     private final RatingRepository ratingRepository;
     private final MemberRepository memberRepository;
 
-    // 5주차 공개 조회예요. 예외만 7주차 코드로 바꿨어요
     @Transactional(readOnly = true)
     public RatingPageResponse getRatingsByMember(Long memberId, int page, int size) {
         if (!memberRepository.existsById(memberId)) {
@@ -34,7 +33,6 @@ public class RatingService {
         return RatingPageResponse.from(ratingRepository.findByMember_MemberId(memberId, pageRequest));
     }
 
-    // 7주차부터 memberId는 요청이 아니라 토큰에서 와요. "누가"를 항상 첫 번째 인자로 둬요
     @Transactional
     public RatingResponse create(Long memberId, CreateRatingRequest request) {
         Member member = memberRepository.findById(memberId)
@@ -59,8 +57,6 @@ public class RatingService {
         Rating rating = findOwnedRating(memberId, ratingId);
         rating.update(request.score(), request.comment());
 
-        // 변경 감지만으로는 UPDATE가 트랜잭션 끝에 나가서, 응답의 updatedAt이 수정 전 값으로 남아요.
-        // 먼저 flush해서 @UpdateTimestamp가 채운 시각을 응답에 담아요
         ratingRepository.flush();
         return RatingResponse.from(rating);
     }
@@ -70,10 +66,6 @@ public class RatingService {
         ratingRepository.delete(findOwnedRating(memberId, ratingId));
     }
 
-    /**
-     * 평점을 찾고(없으면 404) 요청자의 것인지 확인해요(남의 것이면 403).
-     * 인증은 인터셉터가, "이게 네 것인지"라는 인가는 DB를 봐야 아는 서비스가 맡아요.
-     */
     private Rating findOwnedRating(Long memberId, Long ratingId) {
         Rating rating = ratingRepository.findById(ratingId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RATING_NOT_FOUND));

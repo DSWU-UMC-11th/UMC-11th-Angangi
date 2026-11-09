@@ -14,4 +14,10 @@ interface MemberResponse {
   nickname: string;
 }
 
-export type { AvailabilityResponse, MemberResponse, SignupRequest };
+interface MemberInfo {
+  email: string;
+  nickname: string;
+  createdAt: string;
+}
+
+export type { AvailabilityResponse, MemberInfo, MemberResponse, SignupRequest };

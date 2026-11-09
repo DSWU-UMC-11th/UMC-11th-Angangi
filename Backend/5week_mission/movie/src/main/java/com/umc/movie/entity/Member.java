@@ -33,7 +33,6 @@ public class Member extends BaseTimeEntity {
         this.nickname = nickname;
     }
 
-    // @Setter 대신 바뀔 수 있는 값만 의도가 드러나는 메서드로 열어요
     public void updateNickname(String nickname) {
         this.nickname = nickname;
     }

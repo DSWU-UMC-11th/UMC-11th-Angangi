@@ -33,26 +33,23 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addMapping("/**")
                 .allowedOrigins(allowedOrigins)
                 .allowedMethods("GET", "POST", "PATCH", "DELETE")
-                .allowedHeaders("*"); // Authorization 헤더도 여기에 포함돼요
+                .allowedHeaders("*");
     }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(authInterceptor)
-                // 전부 잠그고, 로그인 없이 써야 하는 경로만 열어요.
-                // 새 API를 만들고 목록에 추가하는 걸 잊어도 잠긴 채로 남아서 안전한 쪽으로 실패해요.
                 .addPathPatterns("/**")
                 .excludePathPatterns(
-                        "/auth/**",             // 로그인
-                        "/members",             // 회원가입 (POST /members)
-                        "/members/nickname/**", // 닉네임 중복 확인
-                        "/members/email/**",    // 이메일 중복 확인
-                        "/members/*/ratings",   // 유저별 평점 목록 (공개)
+                        "/auth/**",
+                        "/members",
+                        "/members/nickname/**",
+                        "/members/email/**",
+                        "/members/*/ratings",
                         "/error"
                 );
     }
 
-    // 컨트롤러 파라미터의 @LoginMember를 채워 줄 리졸버를 등록해요
     @Override
     public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
         resolvers.add(loginMemberArgumentResolver);

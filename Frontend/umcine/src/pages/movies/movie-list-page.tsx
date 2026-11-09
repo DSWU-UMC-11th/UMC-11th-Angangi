@@ -21,7 +21,6 @@ const SORT_OPTIONS: { value: MovieSortOrder; label: string }[] = [
 
 function sortMovies(list: TmdbMovieListItem[], sortOrder: MovieSortOrder) {
   if (sortOrder === "latest") {
-    // "2026-07-29" 형식이라 문자열 비교로 날짜 순서를 정할 수 있어요
     return list.toSorted((a, b) =>
       b.release_date.localeCompare(a.release_date),
     );
@@ -35,7 +34,6 @@ function sortMovies(list: TmdbMovieListItem[], sortOrder: MovieSortOrder) {
 export function MovieListPage() {
   const { page = 1 } = useSearch({ from: "/" });
   const navigate = useNavigate({ from: "/" });
-  // 페이지네이션 범위를 넘는 번호는 마지막 페이지로 보여줘요
   const currentPage = Math.min(page, TOTAL_PAGES);
   const sortOrder = useViewSettingsStore((state) => state.sortOrder);
   const setSortOrder = useViewSettingsStore((state) => state.setSortOrder);
@@ -64,8 +62,6 @@ export function MovieListPage() {
         />
       );
     }
-    // 빈 결과와 성공 상태는 MovieGrid에서 구분해요
-    // 정렬은 원본 날짜("2026-07-29")로 한 뒤 카드 UI 타입으로 바꿔요
     return (
       <MovieGrid movies={sortMovies(movies, sortOrder).map(toMovieCardItem)} />
     );

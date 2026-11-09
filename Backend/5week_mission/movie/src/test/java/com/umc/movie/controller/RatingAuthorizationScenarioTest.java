@@ -29,10 +29,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * 실습 6: 인터셉터(인증)와 실제 RatingService(인가)를 함께 돌려 401/403/404를 구분해요.
- * DB 대신 Repository만 가짜로 두었어요.
- */
 @Import({JwtUtil.class, RatingService.class})
 @WebMvcTest(RatingController.class)
 class RatingAuthorizationScenarioTest {

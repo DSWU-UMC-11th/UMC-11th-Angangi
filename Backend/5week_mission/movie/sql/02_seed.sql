@@ -1,6 +1,5 @@
 USE umc_movie;
 
--- password에는 실제 비밀번호 대신 더미 문자열만 넣음 (6주차에 bcrypt 해시로 대체)
 INSERT INTO member (email, password, nickname) VALUES
 ('noco@umc.com', '$2a$10$dummyEncodedPasswordValue', '수현'),
 ('minseo@umc.com', '$2a$10$dummyEncodedPasswordValue', '민서');

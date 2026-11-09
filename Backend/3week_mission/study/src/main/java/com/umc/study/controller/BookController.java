@@ -33,12 +33,6 @@ public class BookController {
         return bookService.getBooks(keyword);
     }
 
-    // 3주차 Raw SQL 방식 (main 브랜치에 보존) - 4주차 범위 아님
-    // @GetMapping("/category/{categoryId}")
-    // public List<Map<String, Object>> getBooksByCategory(@PathVariable Long categoryId) {
-    //     return bookService.getBooksByCategory(categoryId);
-    // }
-
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public BookResponse createBook(@Valid @RequestBody CreateBookRequest request) {

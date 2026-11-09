@@ -74,7 +74,6 @@ class AuthServiceTest {
         given(memberRepository.findByEmail("nobody@umc.com")).willReturn(Optional.empty());
 
         assertLoginFailed(() -> authService.login(new LoginRequest("nobody@umc.com", PASSWORD)));
-        // 응답 시간 차이로 가입 여부가 드러나지 않도록 없는 이메일도 bcrypt 비교를 해요
         verify(passwordEncoder).matches(eq(PASSWORD), anyString());
     }
 }

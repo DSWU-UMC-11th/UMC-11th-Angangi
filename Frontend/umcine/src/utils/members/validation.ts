@@ -1,6 +1,4 @@
-// 회원가입, 로그인, 내 정보 수정에서 같은 규칙으로 입력값을 검사해요
 export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-// 영문 대소문자, 숫자, 특수문자(!@#$%^&*)를 모두 포함해 8자 이상
 export const PASSWORD_REGEX =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])[A-Za-z0-9!@#$%^&*]{8,}$/;
 export const NICKNAME_MIN_LENGTH = 2;

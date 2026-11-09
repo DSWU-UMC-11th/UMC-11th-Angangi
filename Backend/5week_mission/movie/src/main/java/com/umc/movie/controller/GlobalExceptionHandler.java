@@ -23,7 +23,6 @@ public class GlobalExceptionHandler {
 
     private static final String VALIDATION_ERROR_CODE = "COMMON4001";
 
-    // MySQL: Duplicate entry 'umc@example.com' for key 'member.email'
     private static final Pattern DUPLICATE_KEY_PATTERN =
             Pattern.compile("Duplicate entry .* for key '(?:\\w+\\.)?(\\w+)'");
 

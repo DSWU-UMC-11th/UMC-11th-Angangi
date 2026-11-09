@@ -20,7 +20,6 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
-    // 없는 이메일일 때도 bcrypt 비교를 한 번 해서, 응답 시간으로 가입 여부를 짐작하지 못하게 해요
     private final String dummyPasswordHash;
 
     public AuthService(MemberRepository memberRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
@@ -35,10 +34,8 @@ public class AuthService {
         Optional<Member> member = memberRepository.findByEmail(request.email());
         String passwordHash = member.map(Member::getPassword).orElse(dummyPasswordHash);
 
-        // matches()는 저장된 해시에서 salt를 꺼내 입력값을 같은 방식으로 해시한 뒤 비교해요
         boolean passwordMatched = passwordEncoder.matches(request.password(), passwordHash);
 
-        // 이메일이 없는 경우와 비밀번호가 틀린 경우를 같은 응답으로 합쳐요
         if (member.isEmpty() || !passwordMatched) {
             throw new BusinessException(ErrorCode.AUTH_LOGIN_FAILED);
         }

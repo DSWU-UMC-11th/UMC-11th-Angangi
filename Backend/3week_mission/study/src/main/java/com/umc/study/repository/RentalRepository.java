@@ -13,7 +13,6 @@ public class RentalRepository {
     private final JdbcTemplate jdbcTemplate;
 
     public void save(Map<String, Object> body) {
-        // rented_at은 현재 시간, due_at은 7일 뒤로 DB에서 계산
         String sql = "INSERT INTO rental (user_id, book_id, rented_at, due_at) "
                 + "VALUES (?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 7 DAY))";
 
@@ -27,7 +26,6 @@ public class RentalRepository {
     public int updateReturnedAt(Long rentalId) {
         String sql = "UPDATE rental SET returned_at = NOW() WHERE rental_id = ?";
 
-        // update()는 변경된 행의 개수를 반환 (0이면 해당 rentalId가 없음)
         return jdbcTemplate.update(sql, rentalId);
     }
 }

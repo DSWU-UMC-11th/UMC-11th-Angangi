@@ -5,6 +5,7 @@ import type { MovieCardItem } from "../../types/movie-card";
 import { movieQueries } from "../../api/movies/movie-queries";
 import { BookmarkButton } from "../../components/bookmark-button";
 import RetryMessage from "../../components/retry-message";
+import { useFavoriteMovieIds } from "../../hooks/use-favorite-movie-ids";
 import { cn } from "../../utils/cn";
 import { toMovieCardItem } from "../../utils/movies/to-movie-card-item";
 
@@ -12,7 +13,6 @@ export function SearchPage() {
   const { query = "" } = useSearch({ from: "/search" });
   const normalizedQuery = query.trim();
 
-  // 검색어가 없으면 요청하지 않고 가운데 정렬된 검색 시작 화면을 보여줘요
   if (!normalizedQuery) {
     return (
       <main className="page-container flex flex-1 flex-col items-center pt-50 pb-20 max-[768px]:pt-30">
@@ -37,6 +37,7 @@ export function SearchPage() {
 
 function SearchResults({ query }: { query: string }) {
   const searchQuery = useQuery(movieQueries.search(query));
+  const favoriteMovieIds = useFavoriteMovieIds();
 
   const movies = searchQuery.data?.results ?? [];
 
@@ -66,7 +67,11 @@ function SearchResults({ query }: { query: string }) {
     return (
       <ul className="grid grid-cols-1 gap-x-10 min-[1025px]:grid-cols-2">
         {movies.map(toMovieCardItem).map((movie) => (
-          <SearchResultItem key={movie.id} movie={movie} />
+          <SearchResultItem
+            key={movie.id}
+            movie={movie}
+            isFavorite={favoriteMovieIds.has(movie.id)}
+          />
         ))}
       </ul>
     );
@@ -87,7 +92,12 @@ function SearchResults({ query }: { query: string }) {
   );
 }
 
-function SearchResultItem({ movie }: { movie: MovieCardItem }) {
+interface SearchResultItemProps {
+  movie: MovieCardItem;
+  isFavorite: boolean;
+}
+
+function SearchResultItem({ movie, isFavorite }: SearchResultItemProps) {
   const detailLinkProps = {
     to: "/movies/$movieId",
     params: { movieId: String(movie.id) },
@@ -113,6 +123,7 @@ function SearchResultItem({ movie }: { movie: MovieCardItem }) {
           className="absolute top-2 right-2"
           movieId={movie.id}
           movieTitle={movie.title}
+          isFavorite={isFavorite}
         />
       </div>
       <div className="flex min-w-0 flex-col pt-1">
@@ -133,7 +144,6 @@ function SearchResultItem({ movie }: { movie: MovieCardItem }) {
           {...detailLinkProps}
         >
           상세 보기
-          {/* 검은색 SVG를 mask로 사용해 글자색(파란색)으로 칠해요 */}
           <span
             className="size-4 bg-current mask-[url(/icons/movie-icons/arrow-right.svg)] mask-contain mask-center mask-no-repeat"
             aria-hidden="true"

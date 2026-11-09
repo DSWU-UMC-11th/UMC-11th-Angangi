@@ -106,7 +106,6 @@ class MemberServiceTest {
     void 지금_내_닉네임을_그대로_보내면_중복으로_막지_않는다() {
         Member member = Member.builder().email("noco@umc.com").password("hash").nickname("수현").build();
         given(memberRepository.findById(1L)).willReturn(Optional.of(member));
-        // existsByNickname("수현")은 true지만, 나를 뺀 조회는 false예요
         given(memberRepository.existsByNickname("수현")).willReturn(true);
         given(memberRepository.existsByNicknameAndMemberIdNot("수현", 1L)).willReturn(false);
 

@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-# 같은 이메일로 회원가입 요청을 동시에 보내 DB UNIQUE 제약 위반을 재현합니다.
-# 사용법: ./scripts/concurrent-signup.sh [요청 수(기본 10)] [서버 주소(기본 http://localhost:8080)]
-
 COUNT=${1:-10}
 BASE_URL=${2:-http://localhost:8080}
 RUN_ID=$(date +%s | tail -c 5)

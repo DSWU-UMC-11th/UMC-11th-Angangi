@@ -1,9 +1,10 @@
+import { useMutation } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState, type SubmitEvent } from "react";
 import { checkEmail } from "../../api/members/check-email";
 import { checkNickname } from "../../api/members/check-nickname";
-import { signup } from "../../api/members/signup";
 import { getApiFailure } from "../../api/api-response";
+import { memberMutations } from "../../api/members/member-mutations";
 import FormField, {
   primaryButtonClassName,
   secondaryButtonClassName,
@@ -42,7 +43,6 @@ const DUPLICATE_CHECK_REQUEST = {
   nickname: checkNickname,
 };
 
-// 중복 확인 뒤 다른 사람이 먼저 가입하면 서버가 409로 알려줘요 (6주차 서버 ErrorCode)
 const DUPLICATED_CODE_TO_KEY: Record<string, DuplicateCheckKey> = {
   MEMBER4091: "email",
   MEMBER4092: "nickname",
@@ -73,11 +73,14 @@ export function SignupPage() {
   const [duplicateCheck, setDuplicateCheck] = useState<
     Record<DuplicateCheckKey, DuplicateCheckStatus>
   >({ email: "idle", nickname: "idle" });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const signupMutation = useMutation(memberMutations.signup());
+  const isSubmitting = signupMutation.isPending;
+  const submitError = signupMutation.isError
+    ? (getApiFailure(signupMutation.error)?.message ??
+      "회원가입에 실패했어요. 다시 시도해 주세요.")
+    : null;
 
-  // 입력값의 유효성 검사
   const trimmedEmail = form.email.trim();
   const trimmedNickname = form.nickname.trim();
   const isEmailValid = checkEmailFormat(form.email);
@@ -86,21 +89,18 @@ export function SignupPage() {
   const isPasswordConfirmValid =
     form.passwordConfirm.length > 0 && form.password === form.passwordConfirm;
 
-  // 입력을 시작한 필드에만 오류 표시
   const showEmailError = form.email.length > 0 && !isEmailValid;
   const showNicknameError = form.nickname.length > 0 && !isNicknameValid;
   const showPasswordError = form.password.length > 0 && !isPasswordValid;
   const showPasswordConfirmError =
     form.passwordConfirm.length > 0 && !isPasswordConfirmValid;
 
-  // 모든 입력값이 유효하면 제출 버튼 활성화
   const isFormValid =
     isEmailValid &&
     isNicknameValid &&
     isPasswordValid &&
     isPasswordConfirmValid;
 
-  // 입력 조건과 두 중복 확인을 모두 통과해야 제출 가능
   const canSubmit =
     isFormValid &&
     duplicateCheck.email === "available" &&
@@ -108,10 +108,9 @@ export function SignupPage() {
 
   const handleChangeField = (key: FormKey, value: string) => {
     if (isSubmitting) return;
-    setSubmitError(null);
+    if (signupMutation.isError) signupMutation.reset();
     if (key === "email" || key === "nickname") {
       if (duplicateCheck[key] === "checking") return;
-      // 확인한 값을 바꾸면 다시 중복 확인해야 해요
       setDuplicateCheck((prev) => ({ ...prev, [key]: "idle" }));
     }
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -134,34 +133,30 @@ export function SignupPage() {
     }
   };
 
-  const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
-    // 폼 제출 시 페이지 새로고침 방지
+  const handleSubmit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!canSubmit || isSubmitting) return;
 
-    setIsSubmitting(true);
-    setSubmitError(null);
-    try {
-      const response = await signup({
+    signupMutation.mutate(
+      {
         email: trimmedEmail,
         nickname: trimmedNickname,
         password: form.password,
-      });
-      alert(response.message);
-      navigate({ to: "/login" });
-    } catch (error) {
-      // 실패하면 입력값을 유지한 채 서버의 메시지를 보여줘요
-      const failure = getApiFailure(error);
-      const duplicatedKey = failure && DUPLICATED_CODE_TO_KEY[failure.code];
-      if (duplicatedKey) {
-        setDuplicateCheck((prev) => ({ ...prev, [duplicatedKey]: "taken" }));
-      }
-      setSubmitError(
-        failure?.message ?? "회원가입에 실패했어요. 다시 시도해 주세요.",
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
+      },
+      {
+        onSuccess: (response) => {
+          alert(response.message);
+          navigate({ to: "/login" });
+        },
+        onError: (error) => {
+          const failure = getApiFailure(error);
+          const duplicatedKey = failure && DUPLICATED_CODE_TO_KEY[failure.code];
+          if (duplicatedKey) {
+            setDuplicateCheck((prev) => ({ ...prev, [duplicatedKey]: "taken" }));
+          }
+        },
+      },
+    );
   };
 
   return (
@@ -174,7 +169,6 @@ export function SignupPage() {
           UMCine에서 영화 기록을 시작해 보세요.
         </p>
 
-        {/* noValidate는 폼 제출 시 브라우저의 기본 유효성 검사를 꺼요 */}
         <form
           className="mt-8 flex flex-col gap-5 rounded-xl border border-(--color-border-default) bg-(--color-bg-surface) p-6 min-[481px]:p-8"
           onSubmit={handleSubmit}
