@@ -6,6 +6,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -50,6 +51,21 @@ class OpenApiDocsTest {
         mockMvc.perform(get("/v3/api-docs"))
                 .andExpect(jsonPath("$.paths['/favorites'].get.parameters").doesNotExist())
                 .andExpect(jsonPath("$.paths['/favorites/{movieId}'].get.parameters[*].name", not(hasItem("memberId"))));
+    }
+
+    @Test
+    void 구주차_미션_API의_실패_응답_코드와_요청_예시가_문서에_적힌다() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(jsonPath("$.paths['/ratings'].post.responses['401']").exists())
+                .andExpect(jsonPath("$.paths['/ratings'].post.responses['409'].description").value(containsString("RATING4091")))
+                .andExpect(jsonPath("$.paths['/ratings/{ratingId}'].patch.responses['403'].description").value(containsString("RATING403_1")))
+                .andExpect(jsonPath("$.paths['/ratings/{ratingId}'].delete.responses['404']").exists())
+                .andExpect(jsonPath("$.paths['/members/me'].get.responses['401']").exists())
+                .andExpect(jsonPath("$.paths['/members/me'].patch.responses['409']").exists())
+                .andExpect(jsonPath("$.paths['/members'].post.responses['409'].content['application/json'].examples").exists())
+                .andExpect(jsonPath("$.paths['/auth/login'].post.responses['401']").exists())
+                .andExpect(jsonPath("$.components.schemas.SignUpRequest.properties.email.example").value("challenger@umc.com"))
+                .andExpect(jsonPath("$.components.schemas.CreateRatingRequest.properties.score.example").value(5));
     }
 
     @Test
