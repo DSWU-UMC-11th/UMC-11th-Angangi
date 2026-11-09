@@ -13,6 +13,7 @@ export default function Header() {
     matchRoute({ to: "/" }) || matchRoute({ to: "/movies/$movieId" }),
   );
   const isSearchActive = Boolean(matchRoute({ to: "/search" }));
+  const isMyActive = Boolean(matchRoute({ to: "/my" }));
 
   return (
     <header className="border-b border-(--color-border-default) bg-(--color-bg-surface)">
@@ -39,10 +40,9 @@ export default function Header() {
           <NavLink to="/search" isActive={isSearchActive}>
             검색
           </NavLink>
-          {/* TODO: /my 라우트를 만든 뒤 Link로 바꾸기 */}
-          <a className={navLinkClassName} href="/my">
+          <NavLink to="/my" isActive={isMyActive}>
             내 정보
-          </a>
+          </NavLink>
         </nav>
 
         <div className="ml-auto flex gap-3">
@@ -52,6 +52,12 @@ export default function Header() {
             aria-label="검색"
           >
             <img src="/icons/movie-icons/search.svg" alt="" />
+          </Link>
+          <Link
+            className="flex h-10 items-center rounded-md border border-(--color-border-default) bg-(--color-bg-surface) px-4 text-sm font-bold text-(--color-text-primary) no-underline hover:bg-(--color-bg-page)"
+            to="/signup"
+          >
+            회원가입
           </Link>
           <button
             type="button"
@@ -66,7 +72,7 @@ export default function Header() {
 }
 
 interface NavLinkProps {
-  to: "/" | "/search";
+  to: "/" | "/search" | "/my";
   isActive: boolean;
   children: string;
 }
