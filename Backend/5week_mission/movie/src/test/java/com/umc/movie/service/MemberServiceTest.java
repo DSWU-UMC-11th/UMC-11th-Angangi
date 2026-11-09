@@ -1,5 +1,6 @@
 package com.umc.movie.service;
 
+import com.umc.movie.dto.MemberInfoResponse;
 import com.umc.movie.dto.MemberResponse;
 import com.umc.movie.dto.SignUpRequest;
 import com.umc.movie.entity.Member;
@@ -11,6 +12,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.lang.reflect.RecordComponent;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -60,6 +64,29 @@ class MemberServiceTest {
                 .isInstanceOfSatisfying(BusinessException.class,
                         exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.MEMBER_EMAIL_DUPLICATED));
         verify(memberRepository, never()).save(any());
+    }
+
+    @Test
+    void 내_정보는_비밀번호_없이_이메일_닉네임_가입일만_돌려준다() {
+        Member member = Member.builder().email("noco@umc.com").password("hash").nickname("수현").build();
+        given(memberRepository.findById(1L)).willReturn(Optional.of(member));
+
+        MemberInfoResponse response = memberService.getMyInfo(1L);
+
+        assertThat(response.email()).isEqualTo("noco@umc.com");
+        assertThat(response.nickname()).isEqualTo("수현");
+        assertThat(MemberInfoResponse.class.getRecordComponents())
+                .extracting(RecordComponent::getName)
+                .containsExactly("email", "nickname", "createdAt");
+    }
+
+    @Test
+    void 토큰의_회원이_없어졌으면_MEMBER404_1() {
+        given(memberRepository.findById(99L)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> memberService.getMyInfo(99L))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.MEMBER_NOT_FOUND));
     }
 
     @Test

@@ -1,6 +1,7 @@
 package com.umc.movie.service;
 
 import com.umc.movie.dto.EmailCheckResponse;
+import com.umc.movie.dto.MemberInfoResponse;
 import com.umc.movie.dto.MemberResponse;
 import com.umc.movie.dto.NicknameCheckResponse;
 import com.umc.movie.dto.SignUpRequest;
@@ -48,5 +49,16 @@ public class MemberService {
                 .build();
 
         return MemberResponse.from(memberRepository.save(member));
+    }
+
+    @Transactional(readOnly = true)
+    public MemberInfoResponse getMyInfo(Long memberId) {
+        return MemberInfoResponse.from(findMember(memberId));
+    }
+
+    // 토큰은 유효하지만 그사이 탈퇴 등으로 회원이 없어졌을 수 있어요
+    private Member findMember(Long memberId) {
+        return memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
     }
 }
