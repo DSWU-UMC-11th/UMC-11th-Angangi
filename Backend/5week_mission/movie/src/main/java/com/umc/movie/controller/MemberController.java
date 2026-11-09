@@ -9,6 +9,9 @@ import com.umc.movie.dto.MemberUpdateRequest;
 import com.umc.movie.dto.NicknameCheckResponse;
 import com.umc.movie.dto.SignUpRequest;
 import com.umc.movie.service.MemberService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
@@ -17,6 +20,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "회원", description = "회원가입, 중복 확인, 내 정보")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/members")
@@ -26,6 +30,8 @@ public class MemberController {
 
     private final MemberService memberService;
 
+    @Operation(summary = "닉네임 중복 확인")
+    @SecurityRequirements
     @GetMapping("/nickname/{nickname}")
     public NicknameCheckResponse checkNickname(
             @PathVariable
@@ -35,6 +41,8 @@ public class MemberController {
         return memberService.checkNickname(nickname);
     }
 
+    @Operation(summary = "이메일 중복 확인")
+    @SecurityRequirements
     @GetMapping("/email/{email}")
     public EmailCheckResponse checkEmail(
             @PathVariable
@@ -45,6 +53,8 @@ public class MemberController {
         return memberService.checkEmail(email);
     }
 
+    @Operation(summary = "회원가입")
+    @SecurityRequirements
     @PostMapping
     public ResponseEntity<ApiResponse<MemberResponse>> signUp(
             @Valid @RequestBody SignUpRequest request
@@ -54,6 +64,7 @@ public class MemberController {
                 .body(ApiResponse.created("회원가입에 성공했습니다.", response));
     }
 
+    @Operation(summary = "내 정보 조회")
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<MemberInfoResponse>> getMyInfo(
             @LoginMember Long memberId
@@ -62,6 +73,7 @@ public class MemberController {
         return ResponseEntity.ok(ApiResponse.ok("회원 정보를 조회했습니다.", response));
     }
 
+    @Operation(summary = "내 정보 수정")
     @PatchMapping("/me")
     public ResponseEntity<ApiResponse<MemberInfoResponse>> updateMyInfo(
             @LoginMember Long memberId,

@@ -1,6 +1,7 @@
 package com.umc.movie.controller;
 
 import com.umc.movie.auth.LoginMember;
+import com.umc.movie.controller.docs.FavoriteApiDocs;
 import com.umc.movie.dto.ApiResponse;
 import com.umc.movie.dto.CreateFavoriteRequest;
 import com.umc.movie.dto.FavoriteResponse;
@@ -17,10 +18,11 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/favorites")
-public class FavoriteController {
+public class FavoriteController implements FavoriteApiDocs {
 
     private final FavoriteService favoriteService;
 
+    @Override
     @PostMapping
     public ResponseEntity<ApiResponse<FavoriteResponse>> create(
             @LoginMember Long memberId,
@@ -31,12 +33,14 @@ public class FavoriteController {
                 .body(ApiResponse.created("즐겨찾기를 등록했습니다.", response));
     }
 
+    @Override
     @GetMapping
     public ResponseEntity<ApiResponse<List<FavoriteResponse>>> getMyFavorites(@LoginMember Long memberId) {
         List<FavoriteResponse> response = favoriteService.getMyFavorites(memberId);
         return ResponseEntity.ok(ApiResponse.ok("내 즐겨찾기 목록을 조회했습니다.", response));
     }
 
+    @Override
     @GetMapping("/{movieId}")
     public ResponseEntity<ApiResponse<FavoriteStatusResponse>> getStatus(
             @LoginMember Long memberId,
@@ -46,6 +50,7 @@ public class FavoriteController {
         return ResponseEntity.ok(ApiResponse.ok("즐겨찾기 여부를 조회했습니다.", response));
     }
 
+    @Override
     @DeleteMapping("/{movieId}")
     public ResponseEntity<ApiResponse<Void>> delete(
             @LoginMember Long memberId,
