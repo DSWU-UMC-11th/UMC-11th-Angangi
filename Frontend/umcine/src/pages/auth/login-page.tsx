@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { useState, type SubmitEvent } from "react";
+import { getApiFailure } from "../../api/api-response";
 import FormField, { primaryButtonClassName } from "../../components/form-field";
+import { useLoginMutation } from "../../hooks/use-login-mutation";
 import {
   isEmailValid as checkEmailFormat,
   VALIDATION_MESSAGE,
@@ -12,7 +14,13 @@ type FormKey = keyof typeof DEFAULT_FORM;
 
 export function LoginPage() {
   const [form, setForm] = useState(DEFAULT_FORM);
-  const [submittedEmail, setSubmittedEmail] = useState<string | null>(null);
+  const loginMutation = useLoginMutation();
+  const isSubmitting = loginMutation.isPending;
+  // 비밀번호가 틀리면 서버가 401 AUTH401_1과 안내 문구를 줘요
+  const submitError = loginMutation.isError
+    ? (getApiFailure(loginMutation.error)?.message ??
+      "로그인에 실패했어요. 다시 시도해 주세요.")
+    : null;
 
   const isEmailValid = checkEmailFormat(form.email);
   const showEmailError = form.email.length > 0 && !isEmailValid;
@@ -21,15 +29,19 @@ export function LoginPage() {
   const canSubmit = isEmailValid && form.password.length > 0;
 
   const handleChangeField = (key: FormKey, value: string) => {
-    setSubmittedEmail(null);
+    if (isSubmitting) return;
+    if (loginMutation.isError) loginMutation.reset();
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleSubmit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!canSubmit) return;
-    // TODO(8주차): 로그인 API를 연결하고 받은 토큰을 저장해요
-    setSubmittedEmail(form.email.trim());
+    if (!canSubmit || isSubmitting) return;
+
+    loginMutation.mutate({
+      email: form.email.trim(),
+      password: form.password,
+    });
   };
 
   return (
@@ -55,6 +67,7 @@ export function LoginPage() {
             autoComplete="email"
             placeholder="umc@example.com"
             value={form.email}
+            disabled={isSubmitting}
             onChange={(event) => handleChangeField("email", event.target.value)}
             message={
               showEmailError
@@ -70,26 +83,26 @@ export function LoginPage() {
             autoComplete="current-password"
             placeholder="비밀번호를 입력해 주세요"
             value={form.password}
+            disabled={isSubmitting}
             onChange={(event) =>
               handleChangeField("password", event.target.value)
             }
           />
 
-          {submittedEmail && (
+          {submitError && (
             <p
-              className="rounded-lg bg-(--color-action-primary)/8 px-4 py-3 text-[13px] text-(--color-action-primary)"
-              role="status"
+              className="rounded-lg bg-(--color-danger-default)/8 px-4 py-3 text-[13px] text-(--color-danger-default)"
+              role="alert"
             >
-              {submittedEmail} 계정으로 로그인을 요청할 준비가 됐어요. 로그인
-              API는 8주차에 연결해요.
+              {submitError}
             </p>
           )}
           <button
             type="submit"
             className={`mt-2 ${primaryButtonClassName}`}
-            disabled={!canSubmit}
+            disabled={!canSubmit || isSubmitting}
           >
-            로그인
+            {isSubmitting ? "로그인 중" : "로그인"}
           </button>
         </form>
 
