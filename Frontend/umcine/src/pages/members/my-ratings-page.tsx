@@ -42,7 +42,7 @@ function getRatingsErrorMessage(error: unknown) {
   return "평점 목록을 불러오지 못했어요.";
 }
 
-export function MyPage() {
+export function MyRatingsPage() {
   const [memberIdInput, setMemberIdInput] = useState(String(DEFAULT_MEMBER_ID));
   const [memberId, setMemberId] = useState(DEFAULT_MEMBER_ID);
   const [currentPage, setCurrentPage] = useState(1);
