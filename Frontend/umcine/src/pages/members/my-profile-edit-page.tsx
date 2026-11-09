@@ -10,7 +10,6 @@ import FormField, {
 } from "../../components/form-field";
 import RetryMessage from "../../components/retry-message";
 import { useUpdateMeMutation } from "../../hooks/use-update-me-mutation";
-import { useAuthStore } from "../../stores/auth-store";
 import {
   isNicknameValid as checkNicknameFormat,
   VALIDATION_MESSAGE,
@@ -20,22 +19,9 @@ import {
 const NICKNAME_DUPLICATED_CODE = "MEMBER4092";
 
 export function MyProfileEditPage() {
-  const accessToken = useAuthStore((state) => state.accessToken);
-  const meQuery = useQuery({
-    ...memberQueries.me(),
-    enabled: Boolean(accessToken),
-  });
+  // (protected) layout을 통과했으니 토큰이 있어요
+  const meQuery = useQuery(memberQueries.me());
 
-  if (!accessToken) {
-    return (
-      <EditMessage>
-        로그인이 필요해요.{" "}
-        <Link className="text-(--color-action-primary) underline" to="/login">
-          로그인하러 가기
-        </Link>
-      </EditMessage>
-    );
-  }
   if (meQuery.isPending) {
     return <EditMessage>내 정보를 불러오는 중이에요.</EditMessage>;
   }

@@ -1,29 +1,23 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { memberQueries } from "../../api/members/member-queries";
 import RetryMessage from "../../components/retry-message";
-import { useAuthStore } from "../../stores/auth-store";
+import { clearSession } from "../../utils/auth/clear-session";
 import { formatDate } from "../../utils/members/format-date";
 
 export function MyProfilePage() {
-  const accessToken = useAuthStore((state) => state.accessToken);
+  const navigate = useNavigate();
+  // (protected) layout을 통과했으니 토큰이 있어요.
   // 헤더와 같은 key라, 헤더가 이미 받아 온 데이터가 있으면 요청 없이 바로 보여줘요
-  const meQuery = useQuery({
-    ...memberQueries.me(),
-    enabled: Boolean(accessToken),
-  });
+  const meQuery = useQuery(memberQueries.me());
+
+  const handleLogout = async () => {
+    // 먼저 홈으로 옮긴 뒤 지워요. 반대로 하면 layout이 /login으로 먼저 보내요
+    await navigate({ to: "/" });
+    clearSession();
+  };
 
   function renderProfile() {
-    if (!accessToken) {
-      return (
-        <p className="mt-8 text-(--color-text-secondary)">
-          로그인이 필요해요.{" "}
-          <Link className="text-(--color-action-primary) underline" to="/login">
-            로그인하러 가기
-          </Link>
-        </p>
-      );
-    }
     if (meQuery.isPending) {
       return (
         <p className="mt-8 text-(--color-text-secondary)">
@@ -103,6 +97,14 @@ export function MyProfilePage() {
           alt=""
         />
       </Link>
+
+      <button
+        type="button"
+        className="mt-6 text-sm text-(--color-text-secondary) underline hover:text-(--color-text-primary)"
+        onClick={handleLogout}
+      >
+        로그아웃
+      </button>
     </main>
   );
 }

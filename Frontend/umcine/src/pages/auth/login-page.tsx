@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useSearch } from "@tanstack/react-router";
 import { useState, type SubmitEvent } from "react";
 import { getApiFailure } from "../../api/api-response";
 import FormField, { primaryButtonClassName } from "../../components/form-field";
@@ -14,7 +14,9 @@ type FormKey = keyof typeof DEFAULT_FORM;
 
 export function LoginPage() {
   const [form, setForm] = useState(DEFAULT_FORM);
-  const loginMutation = useLoginMutation();
+  // 로그인이 필요한 페이지에서 왔다면 ?redirect=/my/edit 처럼 돌아갈 주소가 있어요
+  const { redirect } = useSearch({ from: "/login" });
+  const loginMutation = useLoginMutation(redirect);
   const isSubmitting = loginMutation.isPending;
   // 비밀번호가 틀리면 서버가 401 AUTH401_1과 안내 문구를 줘요
   const submitError = loginMutation.isError
