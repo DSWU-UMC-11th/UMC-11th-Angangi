@@ -1,58 +1,102 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useState, type SubmitEvent } from "react";
+import { useState, type ReactNode, type SubmitEvent } from "react";
+import { getApiFailure } from "../../api/api-response";
+import { memberQueries } from "../../api/members/member-queries";
+import type { MemberInfo } from "../../api/members/models";
 import FormField, {
   primaryButtonClassName,
   type FieldMessage,
 } from "../../components/form-field";
-import { useMockProfileStore } from "../../stores/mock-profile-store";
+import RetryMessage from "../../components/retry-message";
+import { useUpdateMeMutation } from "../../hooks/use-update-me-mutation";
+import { useAuthStore } from "../../stores/auth-store";
 import {
   isNicknameValid as checkNicknameFormat,
-  isPasswordValid as checkPasswordFormat,
   VALIDATION_MESSAGE,
 } from "../../utils/members/validation";
 
-function errorMessage(show: boolean, text: string): FieldMessage | null {
-  return show ? { tone: "error", text } : null;
-}
+// 다른 회원이 쓰는 닉네임이면 서버가 409와 이 code를 줘요 (회원가입과 같은 code)
+const NICKNAME_DUPLICATED_CODE = "MEMBER4092";
 
 export function MyProfileEditPage() {
-  const profile = useMockProfileStore((state) => state.profile);
-  const updateNickname = useMockProfileStore((state) => state.updateNickname);
-  const navigate = useNavigate();
-
-  // 현재 정보로 폼을 채운 상태에서 시작해요
-  const [form, setForm] = useState({
-    nickname: profile.nickname,
-    password: "",
-    passwordConfirm: "",
+  const accessToken = useAuthStore((state) => state.accessToken);
+  const meQuery = useQuery({
+    ...memberQueries.me(),
+    enabled: Boolean(accessToken),
   });
 
-  const trimmedNickname = form.nickname.trim();
-  const isNicknameValid = checkNicknameFormat(form.nickname);
+  if (!accessToken) {
+    return (
+      <EditMessage>
+        로그인이 필요해요.{" "}
+        <Link className="text-(--color-action-primary) underline" to="/login">
+          로그인하러 가기
+        </Link>
+      </EditMessage>
+    );
+  }
+  if (meQuery.isPending) {
+    return <EditMessage>내 정보를 불러오는 중이에요.</EditMessage>;
+  }
+  if (meQuery.isError) {
+    return (
+      <RetryMessage
+        message="내 정보를 불러오지 못했어요."
+        onRetry={() => meQuery.refetch()}
+      />
+    );
+  }
+
+  // 폼 state의 첫 값을 서버 데이터로 채우려고, 데이터가 준비된 뒤에 폼을 그려요
+  return <MyProfileEditForm profile={meQuery.data} />;
+}
+
+function MyProfileEditForm({ profile }: { profile: MemberInfo }) {
+  const navigate = useNavigate();
+  const updateMeMutation = useUpdateMeMutation();
+  const isSubmitting = updateMeMutation.isPending;
+  const [nickname, setNickname] = useState(profile.nickname);
+
+  const trimmedNickname = nickname.trim();
+  const isNicknameValid = checkNicknameFormat(nickname);
   const isNicknameChanged = trimmedNickname !== profile.nickname;
-  // 비밀번호는 바꿀 때만 입력해요. 비워 두면 기존 비밀번호를 유지해요.
-  const isPasswordChanging =
-    form.password.length > 0 || form.passwordConfirm.length > 0;
-  const isPasswordValid = checkPasswordFormat(form.password);
-  const isPasswordConfirmValid = form.password === form.passwordConfirm;
+  const canSubmit = isNicknameValid && isNicknameChanged;
 
-  // 바뀐 항목이 있고, 바뀐 항목이 모두 유효해야 저장할 수 있어요
-  const canSubmit =
-    isNicknameValid &&
-    (isNicknameChanged || isPasswordChanging) &&
-    (!isPasswordChanging || (isPasswordValid && isPasswordConfirmValid));
+  // 닉네임 중복은 입력창 아래에, 그 밖의 실패는 폼 아래에 보여줘요
+  const failure = getApiFailure(updateMeMutation.error);
+  const isDuplicated = failure?.code === NICKNAME_DUPLICATED_CODE;
+  let nicknameMessage: FieldMessage | null = null;
+  if (!isNicknameValid) {
+    nicknameMessage = { tone: "error", text: VALIDATION_MESSAGE.nickname };
+  } else if (failure && isDuplicated) {
+    nicknameMessage = { tone: "error", text: failure.message };
+  }
+  const submitError =
+    updateMeMutation.isError && !isDuplicated
+      ? (failure?.message ?? "내 정보 수정에 실패했어요. 다시 시도해 주세요.")
+      : null;
 
-  const handleChangeField = (key: keyof typeof form, value: string) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
+  const handleChangeNickname = (value: string) => {
+    if (isSubmitting) return;
+    if (updateMeMutation.isError) updateMeMutation.reset();
+    setNickname(value);
   };
 
   const handleSubmit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!canSubmit) return;
-    // TODO(8주차): 내 정보 수정 API로 바꾸고, 닉네임 중복(MEMBER4092)을 처리해요
-    updateNickname(trimmedNickname);
-    alert("내 정보를 수정했어요.");
-    navigate({ to: "/my" });
+    if (!canSubmit || isSubmitting) return;
+
+    updateMeMutation.mutate(
+      { nickname: trimmedNickname },
+      {
+        onSuccess: () => {
+          alert("내 정보를 수정했어요.");
+          // 캐시가 이미 새 닉네임이라 /my에서 다시 요청하지 않고 바로 보여줘요
+          navigate({ to: "/my" });
+        },
+      },
+    );
   };
 
   return (
@@ -62,7 +106,7 @@ export function MyProfileEditPage() {
           내 정보 수정
         </h1>
         <p className="mt-2 text-sm text-(--color-text-secondary)">
-          바꾸고 싶은 항목만 수정해 주세요.
+          닉네임을 바꿀 수 있어요.
         </p>
 
         <form
@@ -84,48 +128,20 @@ export function MyProfileEditPage() {
             icon="person"
             type="text"
             autoComplete="nickname"
-            value={form.nickname}
-            onChange={(event) =>
-              handleChangeField("nickname", event.target.value)
-            }
-            message={errorMessage(
-              !isNicknameValid,
-              VALIDATION_MESSAGE.nickname,
-            )}
-          />
-          <FormField
-            id="edit-password"
-            label="새 비밀번호"
-            icon="lock"
-            type="password"
-            autoComplete="new-password"
-            placeholder="바꾸지 않으려면 비워 두세요"
-            value={form.password}
-            onChange={(event) =>
-              handleChangeField("password", event.target.value)
-            }
-            message={errorMessage(
-              isPasswordChanging && !isPasswordValid,
-              VALIDATION_MESSAGE.password,
-            )}
-          />
-          <FormField
-            id="edit-password-confirm"
-            label="새 비밀번호 확인"
-            icon="lock"
-            type="password"
-            autoComplete="new-password"
-            placeholder="새 비밀번호를 한 번 더 입력해 주세요"
-            value={form.passwordConfirm}
-            onChange={(event) =>
-              handleChangeField("passwordConfirm", event.target.value)
-            }
-            message={errorMessage(
-              form.passwordConfirm.length > 0 && !isPasswordConfirmValid,
-              VALIDATION_MESSAGE.passwordConfirm,
-            )}
+            value={nickname}
+            disabled={isSubmitting}
+            onChange={(event) => handleChangeNickname(event.target.value)}
+            message={nicknameMessage}
           />
 
+          {submitError && (
+            <p
+              className="rounded-lg bg-(--color-danger-default)/8 px-4 py-3 text-[13px] text-(--color-danger-default)"
+              role="alert"
+            >
+              {submitError}
+            </p>
+          )}
           <div className="mt-2 flex gap-2">
             <Link
               className="flex h-12 flex-1 items-center justify-center rounded-md border border-(--color-border-default) text-[15px] font-bold text-(--color-text-primary) no-underline hover:bg-(--color-bg-page)"
@@ -136,13 +152,21 @@ export function MyProfileEditPage() {
             <button
               type="submit"
               className={`flex-2 ${primaryButtonClassName}`}
-              disabled={!canSubmit}
+              disabled={!canSubmit || isSubmitting}
             >
-              저장하기
+              {isSubmitting ? "저장 중" : "저장하기"}
             </button>
           </div>
         </form>
       </div>
+    </main>
+  );
+}
+
+function EditMessage({ children }: { children: ReactNode }) {
+  return (
+    <main className="page-container flex-1 pt-8 pb-20 text-(--color-text-secondary)">
+      <p>{children}</p>
     </main>
   );
 }

@@ -1,18 +1,47 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { useMockProfileStore } from "../../stores/mock-profile-store";
+import { memberQueries } from "../../api/members/member-queries";
+import RetryMessage from "../../components/retry-message";
+import { useAuthStore } from "../../stores/auth-store";
+import { formatDate } from "../../utils/members/format-date";
 
 export function MyProfilePage() {
-  const profile = useMockProfileStore((state) => state.profile);
+  const accessToken = useAuthStore((state) => state.accessToken);
+  // 헤더와 같은 key라, 헤더가 이미 받아 온 데이터가 있으면 요청 없이 바로 보여줘요
+  const meQuery = useQuery({
+    ...memberQueries.me(),
+    enabled: Boolean(accessToken),
+  });
 
-  return (
-    <main className="page-container flex-1 pt-8 pb-20">
-      <h1 className="text-[28px] font-extrabold tracking-[-0.02em] min-[481px]:text-4xl">
-        내 정보
-      </h1>
-      <p className="mt-2 text-sm text-(--color-text-secondary)">
-        로그인 API를 연결하기 전이라 예시 회원 정보를 보여줘요.
-      </p>
+  function renderProfile() {
+    if (!accessToken) {
+      return (
+        <p className="mt-8 text-(--color-text-secondary)">
+          로그인이 필요해요.{" "}
+          <Link className="text-(--color-action-primary) underline" to="/login">
+            로그인하러 가기
+          </Link>
+        </p>
+      );
+    }
+    if (meQuery.isPending) {
+      return (
+        <p className="mt-8 text-(--color-text-secondary)">
+          내 정보를 불러오는 중이에요.
+        </p>
+      );
+    }
+    if (meQuery.isError) {
+      return (
+        <RetryMessage
+          message="내 정보를 불러오지 못했어요."
+          onRetry={() => meQuery.refetch()}
+        />
+      );
+    }
 
+    const profile = meQuery.data;
+    return (
       <section
         className="mt-8 max-w-160 rounded-xl border border-(--color-border-default) bg-(--color-bg-surface) p-6 min-[481px]:p-8"
         aria-labelledby="profile-nickname"
@@ -45,9 +74,18 @@ export function MyProfilePage() {
         <dl className="mt-6 grid gap-x-4 gap-y-1 border-t border-(--color-border-default) pt-6 text-sm min-[481px]:grid-cols-[120px_1fr] min-[481px]:gap-y-4">
           <ProfileRow label="이메일" value={profile.email} />
           <ProfileRow label="닉네임" value={profile.nickname} />
-          <ProfileRow label="가입일" value={profile.joinedAt} />
+          <ProfileRow label="가입일" value={formatDate(profile.createdAt)} />
         </dl>
       </section>
+    );
+  }
+
+  return (
+    <main className="page-container flex-1 pt-8 pb-20">
+      <h1 className="text-[28px] font-extrabold tracking-[-0.02em] min-[481px]:text-4xl">
+        내 정보
+      </h1>
+      {renderProfile()}
 
       <Link
         className="mt-4 flex max-w-160 items-center justify-between rounded-xl border border-(--color-border-default) bg-(--color-bg-surface) px-6 py-5 text-(--color-text-primary) no-underline hover:bg-(--color-bg-page) min-[481px]:px-8"
