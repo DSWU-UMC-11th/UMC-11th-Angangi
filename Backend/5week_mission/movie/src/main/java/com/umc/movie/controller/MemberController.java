@@ -1,5 +1,6 @@
 package com.umc.movie.controller;
 
+import com.umc.movie.auth.LoginMember;
 import com.umc.movie.dto.ApiResponse;
 import com.umc.movie.dto.EmailCheckResponse;
 import com.umc.movie.dto.MemberInfoResponse;
@@ -7,7 +8,6 @@ import com.umc.movie.dto.MemberResponse;
 import com.umc.movie.dto.MemberUpdateRequest;
 import com.umc.movie.dto.NicknameCheckResponse;
 import com.umc.movie.dto.SignUpRequest;
-import com.umc.movie.interceptor.AuthInterceptor;
 import com.umc.movie.service.MemberService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
@@ -54,10 +54,10 @@ public class MemberController {
                 .body(ApiResponse.created("회원가입에 성공했습니다.", response));
     }
 
-    // URL에 누구인지가 없어요. 인터셉터가 토큰에서 꺼내 담아 둔 memberId를 써요
+    // URL에 누구인지가 없어요. @LoginMember가 토큰에서 꺼낸 memberId를 넣어 줘요
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<MemberInfoResponse>> getMyInfo(
-            @RequestAttribute(AuthInterceptor.MEMBER_ID) Long memberId
+            @LoginMember Long memberId
     ) {
         MemberInfoResponse response = memberService.getMyInfo(memberId);
         return ResponseEntity.ok(ApiResponse.ok("회원 정보를 조회했습니다.", response));
@@ -65,7 +65,7 @@ public class MemberController {
 
     @PatchMapping("/me")
     public ResponseEntity<ApiResponse<MemberInfoResponse>> updateMyInfo(
-            @RequestAttribute(AuthInterceptor.MEMBER_ID) Long memberId,
+            @LoginMember Long memberId,
             @Valid @RequestBody MemberUpdateRequest request
     ) {
         MemberInfoResponse response = memberService.updateMyInfo(memberId, request);

@@ -1,11 +1,11 @@
 package com.umc.movie.controller;
 
+import com.umc.movie.auth.LoginMember;
 import com.umc.movie.dto.ApiResponse;
 import com.umc.movie.dto.CreateRatingRequest;
 import com.umc.movie.dto.RatingPageResponse;
 import com.umc.movie.dto.RatingResponse;
 import com.umc.movie.dto.UpdateRatingRequest;
-import com.umc.movie.interceptor.AuthInterceptor;
 import com.umc.movie.service.RatingService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -38,9 +38,10 @@ public class RatingController {
     }
 
     // URL에서 /members/{memberId}가 사라졌어요. 받지 않는 값은 조작할 수도 없어요
+    // memberId는 @LoginMember가 토큰에서 꺼내 넣어 줘요
     @PostMapping("/ratings")
     public ResponseEntity<ApiResponse<RatingResponse>> create(
-            @RequestAttribute(AuthInterceptor.MEMBER_ID) Long memberId,
+            @LoginMember Long memberId,
             @Valid @RequestBody CreateRatingRequest request
     ) {
         RatingResponse response = ratingService.create(memberId, request);
@@ -50,7 +51,7 @@ public class RatingController {
 
     @PatchMapping("/ratings/{ratingId}")
     public ResponseEntity<ApiResponse<RatingResponse>> update(
-            @RequestAttribute(AuthInterceptor.MEMBER_ID) Long memberId,
+            @LoginMember Long memberId,
             @PathVariable Long ratingId,
             @Valid @RequestBody UpdateRatingRequest request
     ) {
@@ -61,7 +62,7 @@ public class RatingController {
     // 204는 본문을 보낼 수 없어서 공통 응답 형식을 지키려고 200 + result null로 바꿨어요
     @DeleteMapping("/ratings/{ratingId}")
     public ResponseEntity<ApiResponse<Void>> delete(
-            @RequestAttribute(AuthInterceptor.MEMBER_ID) Long memberId,
+            @LoginMember Long memberId,
             @PathVariable Long ratingId
     ) {
         ratingService.delete(memberId, ratingId);
