@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useRef, useState, type SubmitEvent } from "react";
 import type { MovieCardItem } from "../../types/movie-card";
-import { searchMovies } from "../../api/movies/search-movies";
+import { movieQueries } from "../../api/movies/movie-queries";
 import { BookmarkButton } from "../../components/bookmark-button";
 import RetryMessage from "../../components/retry-message";
 import { cn } from "../../utils/cn";
@@ -36,11 +36,7 @@ export function SearchPage() {
 }
 
 function SearchResults({ query }: { query: string }) {
-  const searchQuery = useQuery({
-    queryKey: ["movies", "search", { query }],
-    queryFn: () => searchMovies({ query }),
-    enabled: query.length > 0,
-  });
+  const searchQuery = useQuery(movieQueries.search(query));
 
   const movies = searchQuery.data?.results ?? [];
 

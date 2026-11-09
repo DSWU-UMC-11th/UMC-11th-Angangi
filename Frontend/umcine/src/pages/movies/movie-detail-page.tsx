@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
 import { useState, type SubmitEvent } from "react";
-import { getMovieDetail } from "../../api/movies/get-movie-detail";
+import { movieQueries } from "../../api/movies/movie-queries";
 import type { TmdbMovieDetail } from "../../api/movies/models";
 import { BookmarkButton } from "../../components/bookmark-button";
 import { cn } from "../../utils/cn";
@@ -34,10 +34,8 @@ export function MovieDetailPage() {
   const isValid = isValidMovieId(movieId);
 
   const movieDetailQuery = useQuery({
-    queryKey: ["movies", "detail", movieId],
-    queryFn: () => getMovieDetail(movieId),
+    ...movieQueries.detail(movieId),
     enabled: isValid,
-    staleTime: 30 * 1000,
   });
 
   // 요청하지 않아도 isPending이 참이라 잘못된 번호 안내를 로딩보다 먼저 확인해요

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { getMovies } from "../../api/movies/get-movies";
+import { movieQueries } from "../../api/movies/movie-queries";
 import type { TmdbMovieListItem } from "../../api/movies/models";
 import MovieGrid from "../../components/movie-grid";
 import Pagination from "../../components/pagination";
@@ -40,10 +40,7 @@ export function MovieListPage() {
   const sortOrder = useViewSettingsStore((state) => state.sortOrder);
   const setSortOrder = useViewSettingsStore((state) => state.setSortOrder);
 
-  const moviesQuery = useQuery({
-    queryKey: ["movies", "list", { page: currentPage }],
-    queryFn: () => getMovies({ page: currentPage }),
-  });
+  const moviesQuery = useQuery(movieQueries.list(currentPage));
 
   const movies = moviesQuery.data?.results ?? [];
 
