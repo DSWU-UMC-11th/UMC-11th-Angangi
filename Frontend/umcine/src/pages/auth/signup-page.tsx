@@ -92,14 +92,25 @@ export function SignupPage() {
     isPasswordValid &&
     isPasswordConfirmValid;
 
+  // 입력 조건과 두 중복 확인을 모두 통과해야 제출 가능
+  const canSubmit =
+    isFormValid &&
+    duplicateCheck.email === "available" &&
+    duplicateCheck.nickname === "available";
+
   const handleChangeField = (key: FormKey, value: string) => {
     if (key === "email" || key === "nickname") {
+      if (duplicateCheck[key] === "checking") return;
+      // 확인한 값을 바꾸면 다시 중복 확인해야 해요
       setDuplicateCheck((prev) => ({ ...prev, [key]: "idle" }));
     }
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleCheckDuplicate = async (key: DuplicateCheckKey) => {
+    const isValid = key === "email" ? isEmailValid : isNicknameValid;
+    if (!isValid || duplicateCheck[key] === "checking") return;
+
     setDuplicateCheck((prev) => ({ ...prev, [key]: "checking" }));
     try {
       const value = key === "email" ? trimmedEmail : trimmedNickname;
@@ -143,6 +154,7 @@ export function SignupPage() {
             autoComplete="email"
             placeholder="umc@example.com"
             value={form.email}
+            disabled={duplicateCheck.email === "checking"}
             onChange={(event) => handleChangeField("email", event.target.value)}
             message={
               showEmailError
@@ -165,6 +177,7 @@ export function SignupPage() {
             autoComplete="nickname"
             placeholder="2~12자로 입력해 주세요"
             value={form.nickname}
+            disabled={duplicateCheck.nickname === "checking"}
             onChange={(event) =>
               handleChangeField("nickname", event.target.value)
             }
@@ -225,10 +238,15 @@ export function SignupPage() {
           <button
             type="submit"
             className={`mt-2 ${primaryButtonClassName}`}
-            disabled={!isFormValid}
+            disabled={!canSubmit}
           >
             가입하기
           </button>
+          {isFormValid && !canSubmit && (
+            <p className="-mt-2 text-center text-[13px] text-(--color-text-secondary)">
+              이메일과 닉네임 중복 확인을 마치면 가입할 수 있어요.
+            </p>
+          )}
         </form>
 
         <p className="mt-6 text-center text-sm text-(--color-text-secondary)">
