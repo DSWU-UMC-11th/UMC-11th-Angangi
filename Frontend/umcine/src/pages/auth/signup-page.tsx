@@ -1,6 +1,8 @@
 import { useState, type SubmitEvent } from "react";
 import { checkEmail } from "../../api/members/check-email";
 import { checkNickname } from "../../api/members/check-nickname";
+import { signup } from "../../api/members/signup";
+import { getApiFailure } from "../../api/api-response";
 import FormField, {
   primaryButtonClassName,
   secondaryButtonClassName,
@@ -41,6 +43,12 @@ const DUPLICATE_CHECK_REQUEST = {
   nickname: checkNickname,
 };
 
+// 중복 확인 뒤 다른 사람이 먼저 가입하면 서버가 409로 알려줘요 (6주차 서버 ErrorCode)
+const DUPLICATED_CODE_TO_KEY: Record<string, DuplicateCheckKey> = {
+  MEMBER4091: "email",
+  MEMBER4092: "nickname",
+};
+
 function getDuplicateCheckMessage(
   status: DuplicateCheckStatus,
   key: DuplicateCheckKey,
@@ -66,6 +74,9 @@ export function SignupPage() {
   const [duplicateCheck, setDuplicateCheck] = useState<
     Record<DuplicateCheckKey, DuplicateCheckStatus>
   >({ email: "idle", nickname: "idle" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  // const navigate = useNavigate();
 
   // 입력값의 유효성 검사
   const trimmedEmail = form.email.trim();
@@ -99,6 +110,8 @@ export function SignupPage() {
     duplicateCheck.nickname === "available";
 
   const handleChangeField = (key: FormKey, value: string) => {
+    if (isSubmitting) return;
+    setSubmitError(null);
     if (key === "email" || key === "nickname") {
       if (duplicateCheck[key] === "checking") return;
       // 확인한 값을 바꾸면 다시 중복 확인해야 해요
@@ -124,10 +137,37 @@ export function SignupPage() {
     }
   };
 
-  const handleSubmit = (event: SubmitEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     // 폼 제출 시 페이지 새로고침 방지
     event.preventDefault();
-    // 3.4에서 회원가입 API 요청 추가
+    if (!canSubmit || isSubmitting) return;
+
+    setIsSubmitting(true);
+    setSubmitError(null);
+    try {
+      const response = await signup({
+        email: trimmedEmail,
+        nickname: trimmedNickname,
+        password: form.password,
+      });
+      alert(response.message);
+      setForm(DEFAULT_FORM);
+      setDuplicateCheck({ email: "idle", nickname: "idle" });
+      // 로그인 페이지 연결 후 주석 해제
+      // navigate({ to: "/login" });
+    } catch (error) {
+      // 실패하면 입력값을 유지한 채 서버의 메시지를 보여줘요
+      const failure = getApiFailure(error);
+      const duplicatedKey = failure && DUPLICATED_CODE_TO_KEY[failure.code];
+      if (duplicatedKey) {
+        setDuplicateCheck((prev) => ({ ...prev, [duplicatedKey]: "taken" }));
+      }
+      setSubmitError(
+        failure?.message ?? "회원가입에 실패했어요. 다시 시도해 주세요.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -154,7 +194,7 @@ export function SignupPage() {
             autoComplete="email"
             placeholder="umc@example.com"
             value={form.email}
-            disabled={duplicateCheck.email === "checking"}
+            disabled={isSubmitting || duplicateCheck.email === "checking"}
             onChange={(event) => handleChangeField("email", event.target.value)}
             message={
               showEmailError
@@ -163,7 +203,7 @@ export function SignupPage() {
             }
             action={
               <DuplicateCheckButton
-                disabled={!isEmailValid}
+                disabled={!isEmailValid || isSubmitting}
                 isChecking={duplicateCheck.email === "checking"}
                 onClick={() => handleCheckDuplicate("email")}
               />
@@ -177,7 +217,7 @@ export function SignupPage() {
             autoComplete="nickname"
             placeholder="2~12자로 입력해 주세요"
             value={form.nickname}
-            disabled={duplicateCheck.nickname === "checking"}
+            disabled={isSubmitting || duplicateCheck.nickname === "checking"}
             onChange={(event) =>
               handleChangeField("nickname", event.target.value)
             }
@@ -191,7 +231,7 @@ export function SignupPage() {
             }
             action={
               <DuplicateCheckButton
-                disabled={!isNicknameValid}
+                disabled={!isNicknameValid || isSubmitting}
                 isChecking={duplicateCheck.nickname === "checking"}
                 onClick={() => handleCheckDuplicate("nickname")}
               />
@@ -205,6 +245,7 @@ export function SignupPage() {
             autoComplete="new-password"
             placeholder="영문 대소문자, 숫자, 특수문자 포함 8자 이상"
             value={form.password}
+            disabled={isSubmitting}
             onChange={(event) =>
               handleChangeField("password", event.target.value)
             }
@@ -225,6 +266,7 @@ export function SignupPage() {
             autoComplete="new-password"
             placeholder="비밀번호를 한 번 더 입력해 주세요"
             value={form.passwordConfirm}
+            disabled={isSubmitting}
             onChange={(event) =>
               handleChangeField("passwordConfirm", event.target.value)
             }
@@ -235,12 +277,20 @@ export function SignupPage() {
             }
           />
 
+          {submitError && (
+            <p
+              className="rounded-lg bg-(--color-danger-default)/8 px-4 py-3 text-[13px] text-(--color-danger-default)"
+              role="alert"
+            >
+              {submitError}
+            </p>
+          )}
           <button
             type="submit"
             className={`mt-2 ${primaryButtonClassName}`}
-            disabled={!canSubmit}
+            disabled={!canSubmit || isSubmitting}
           >
-            가입하기
+            {isSubmitting ? "가입 중" : "가입하기"}
           </button>
           {isFormValid && !canSubmit && (
             <p className="-mt-2 text-center text-[13px] text-(--color-text-secondary)">
