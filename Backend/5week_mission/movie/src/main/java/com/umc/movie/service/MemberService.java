@@ -1,5 +1,6 @@
 package com.umc.movie.service;
 
+import com.umc.movie.dto.EmailCheckResponse;
 import com.umc.movie.dto.NicknameCheckResponse;
 import com.umc.movie.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
@@ -16,5 +17,11 @@ public class MemberService {
     public NicknameCheckResponse checkNickname(String nickname) {
         boolean exists = memberRepository.existsByNickname(nickname);
         return new NicknameCheckResponse(!exists);
+    }
+
+    @Transactional(readOnly = true)
+    public EmailCheckResponse checkEmail(String email) {
+        boolean exists = memberRepository.existsByEmail(email);
+        return new EmailCheckResponse(!exists);
     }
 }
