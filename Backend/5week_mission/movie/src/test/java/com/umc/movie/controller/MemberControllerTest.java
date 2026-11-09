@@ -3,6 +3,8 @@ package com.umc.movie.controller;
 import com.umc.movie.dto.EmailCheckResponse;
 import com.umc.movie.dto.NicknameCheckResponse;
 import com.umc.movie.service.MemberService;
+import com.umc.movie.util.JwtUtil;
+import org.springframework.context.annotation.Import;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -18,6 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@Import(JwtUtil.class)
 @WebMvcTest(MemberController.class)
 class MemberControllerTest {
 

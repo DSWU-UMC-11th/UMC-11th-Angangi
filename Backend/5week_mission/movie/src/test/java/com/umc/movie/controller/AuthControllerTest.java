@@ -5,6 +5,8 @@ import com.umc.movie.dto.LoginResponse;
 import com.umc.movie.exception.BusinessException;
 import com.umc.movie.exception.ErrorCode;
 import com.umc.movie.service.AuthService;
+import com.umc.movie.util.JwtUtil;
+import org.springframework.context.annotation.Import;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -21,6 +23,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@Import(JwtUtil.class)
 @WebMvcTest(AuthController.class)
 class AuthControllerTest {
 

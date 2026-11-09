@@ -3,6 +3,8 @@ package com.umc.movie.controller;
 import com.umc.movie.dto.RatingPageResponse;
 import com.umc.movie.dto.RatingResponse;
 import com.umc.movie.service.RatingService;
+import com.umc.movie.util.JwtUtil;
+import org.springframework.context.annotation.Import;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -23,6 +25,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@Import(JwtUtil.class)
 @WebMvcTest(RatingController.class)
 class RatingControllerTest {
 

@@ -3,11 +3,14 @@ package com.umc.movie.controller;
 import com.umc.movie.dto.CreateRatingRequest;
 import com.umc.movie.dto.UpdateRatingRequest;
 import com.umc.movie.service.RatingService;
+import com.umc.movie.util.JwtUtil;
+import org.springframework.context.annotation.Import;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -28,6 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@Import(JwtUtil.class)
 @WebMvcTest(RatingController.class)
 class RatingCommandControllerTest {
 
@@ -36,6 +40,13 @@ class RatingCommandControllerTest {
 
     @MockitoBean
     private RatingService ratingService;
+
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    private String bearer(Long memberId) {
+        return "Bearer " + jwtUtil.createAccessToken(memberId, "member" + memberId + "@umc.com");
+    }
 
     @Test
     void 평점을_등록하면_201과_평점_ID를_응답한다() throws Exception {
@@ -74,7 +85,7 @@ class RatingCommandControllerTest {
     void 후기가_500자를_넘으면_400() throws Exception {
         String longComment = "가".repeat(501);
 
-        mockMvc.perform(patch("/members/1/ratings/4")
+        mockMvc.perform(patch("/members/1/ratings/4").header(HttpHeaders.AUTHORIZATION, bearer(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"score\": 4, \"comment\": \"" + longComment + "\"}"))
                 .andExpect(status().isBadRequest())
@@ -83,7 +94,7 @@ class RatingCommandControllerTest {
 
     @Test
     void 평점을_수정하면_200과_성공_응답을_돌려준다() throws Exception {
-        mockMvc.perform(patch("/members/1/ratings/4")
+        mockMvc.perform(patch("/members/1/ratings/4").header(HttpHeaders.AUTHORIZATION, bearer(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"score\": 4, \"comment\": \"다시 보니 괜찮아요\"}"))
                 .andExpect(status().isOk())
@@ -95,7 +106,7 @@ class RatingCommandControllerTest {
 
     @Test
     void 평점을_삭제하면_본문_없이_204를_응답한다() throws Exception {
-        mockMvc.perform(delete("/members/1/ratings/4"))
+        mockMvc.perform(delete("/members/1/ratings/4").header(HttpHeaders.AUTHORIZATION, bearer(1L)))
                 .andExpect(status().isNoContent())
                 .andExpect(content().string(""));
 
@@ -107,7 +118,7 @@ class RatingCommandControllerTest {
         willThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "본인이 작성한 평점만 수정하거나 삭제할 수 있습니다."))
                 .given(ratingService).delete(4L, 2L);
 
-        mockMvc.perform(delete("/members/2/ratings/4"))
+        mockMvc.perform(delete("/members/2/ratings/4").header(HttpHeaders.AUTHORIZATION, bearer(2L)))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.isSuccess").value(false))
                 .andExpect(jsonPath("$.code").value("COMMON403"))
