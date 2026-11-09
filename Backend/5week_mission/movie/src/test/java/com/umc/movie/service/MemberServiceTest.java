@@ -3,6 +3,8 @@ package com.umc.movie.service;
 import com.umc.movie.dto.MemberResponse;
 import com.umc.movie.dto.SignUpRequest;
 import com.umc.movie.entity.Member;
+import com.umc.movie.exception.BusinessException;
+import com.umc.movie.exception.ErrorCode;
 import com.umc.movie.repository.MemberRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -55,8 +57,8 @@ class MemberServiceTest {
         given(memberRepository.existsByEmail("umc@example.com")).willReturn(true);
 
         assertThatThrownBy(() -> memberService.signUp(REQUEST))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("이미 사용 중인 이메일입니다.");
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.MEMBER_EMAIL_DUPLICATED));
         verify(memberRepository, never()).save(any());
     }
 
@@ -65,8 +67,8 @@ class MemberServiceTest {
         given(memberRepository.existsByNickname("moviefan")).willReturn(true);
 
         assertThatThrownBy(() -> memberService.signUp(REQUEST))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("이미 사용 중인 닉네임입니다.");
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.MEMBER_NICKNAME_DUPLICATED));
         verify(memberRepository, never()).save(any());
     }
 }

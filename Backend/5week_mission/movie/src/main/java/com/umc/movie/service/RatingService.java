@@ -5,6 +5,8 @@ import com.umc.movie.dto.RatingPageResponse;
 import com.umc.movie.dto.UpdateRatingRequest;
 import com.umc.movie.entity.Member;
 import com.umc.movie.entity.Rating;
+import com.umc.movie.exception.BusinessException;
+import com.umc.movie.exception.ErrorCode;
 import com.umc.movie.repository.MemberRepository;
 import com.umc.movie.repository.RatingRepository;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +40,7 @@ public class RatingService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 유저입니다."));
 
         if (ratingRepository.existsByMember_MemberIdAndMovieId(memberId, request.movieId())) {
-            throw new IllegalArgumentException("이미 이 영화에 평점을 남기셨습니다.");
+            throw new BusinessException(ErrorCode.RATING_DUPLICATED);
         }
 
         Rating rating = Rating.builder()

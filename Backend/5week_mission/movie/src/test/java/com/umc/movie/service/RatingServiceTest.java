@@ -4,6 +4,8 @@ import com.umc.movie.dto.CreateRatingRequest;
 import com.umc.movie.dto.UpdateRatingRequest;
 import com.umc.movie.entity.Member;
 import com.umc.movie.entity.Rating;
+import com.umc.movie.exception.BusinessException;
+import com.umc.movie.exception.ErrorCode;
 import com.umc.movie.repository.MemberRepository;
 import com.umc.movie.repository.RatingRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -85,8 +87,8 @@ class RatingServiceTest {
         given(ratingRepository.existsByMember_MemberIdAndMovieId(OWNER_ID, 550L)).willReturn(true);
 
         assertThatThrownBy(() -> ratingService.create(OWNER_ID, new CreateRatingRequest(550L, 5, null)))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("이미 이 영화에 평점을 남기셨습니다.");
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.RATING_DUPLICATED));
         verify(ratingRepository, never()).save(any());
     }
 
