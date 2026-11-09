@@ -1,10 +1,18 @@
 import { serverClient } from "../server-client";
-import type { MemberRating } from "./models";
+import type { MemberRatingPage } from "./models";
 
-function getMemberRatings(memberId: number) {
+interface GetMemberRatingsParams {
+  memberId: number;
+  page: number;
+  size: number;
+}
+
+function getMemberRatings({ memberId, page, size }: GetMemberRatingsParams) {
   return serverClient
-    .get(`members/${memberId}/ratings`)
-    .json<MemberRating[]>();
+    .get(`members/${memberId}/ratings`, {
+      searchParams: { page, size },
+    })
+    .json<MemberRatingPage>();
 }
 
 export { getMemberRatings };

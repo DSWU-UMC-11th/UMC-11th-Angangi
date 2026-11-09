@@ -4,10 +4,12 @@ import { useEffect, useState, type SubmitEvent } from "react";
 import { getMovieDetail } from "../../api/movies/get-movie-detail";
 import { getMemberRatings } from "../../api/ratings/get-member-ratings";
 import type { MemberRating } from "../../api/ratings/models";
+import Pagination from "../../components/pagination";
 import RetryMessage from "../../components/retry-message";
 import { getTmdbPosterUrl } from "../../utils/movies/tmdb-image";
 
 const DEFAULT_MEMBER_ID = 1;
+const PAGE_SIZE = 5;
 const RATINGS = [1, 2, 3, 4, 5];
 
 interface RatingWithMovie extends MemberRating {
@@ -43,6 +45,9 @@ function getRatingsErrorMessage(error: unknown) {
 export function MyPage() {
   const [memberIdInput, setMemberIdInput] = useState(String(DEFAULT_MEMBER_ID));
   const [memberId, setMemberId] = useState(DEFAULT_MEMBER_ID);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
   const [ratings, setRatings] = useState<RatingWithMovie[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -56,9 +61,17 @@ export function MyPage() {
       setErrorMessage(null);
 
       try {
-        const response = await getMemberRatings(memberId);
-        const withMovies = await attachMovieInfo(response);
-        if (!ignore) setRatings(withMovies);
+        const response = await getMemberRatings({
+          memberId,
+          page: currentPage - 1,
+          size: PAGE_SIZE,
+        });
+        const withMovies = await attachMovieInfo(response.ratings);
+        if (!ignore) {
+          setRatings(withMovies);
+          setTotalPages(response.totalPages);
+          setTotalElements(response.totalElements);
+        }
       } catch (error) {
         if (!ignore) setErrorMessage(getRatingsErrorMessage(error));
       } finally {
@@ -71,7 +84,7 @@ export function MyPage() {
     return () => {
       ignore = true;
     };
-  }, [memberId, retryCount]);
+  }, [memberId, currentPage, retryCount]);
 
   const parsedInput = Number(memberIdInput);
   const isValidInput = Number.isInteger(parsedInput) && parsedInput > 0;
@@ -79,11 +92,12 @@ export function MyPage() {
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!isValidInput) return;
-    if (parsedInput === memberId) {
+    if (parsedInput === memberId && currentPage === 1) {
       setRetryCount((count) => count + 1);
       return;
     }
     setMemberId(parsedInput);
+    setCurrentPage(1);
   }
 
   function renderContent() {
@@ -110,11 +124,23 @@ export function MyPage() {
       );
     }
     return (
-      <ul className="flex flex-col gap-3">
-        {ratings.map((rating) => (
-          <RatingItem key={rating.ratingId} rating={rating} />
-        ))}
-      </ul>
+      <>
+        <p className="mb-3 text-sm text-(--color-text-secondary)">
+          총 {totalElements}개의 평점
+        </p>
+        <ul className="flex flex-col gap-3">
+          {ratings.map((rating) => (
+            <RatingItem key={rating.ratingId} rating={rating} />
+          ))}
+        </ul>
+        {totalPages > 1 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        )}
+      </>
     );
   }
 

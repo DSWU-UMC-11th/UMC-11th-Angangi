@@ -7,4 +7,13 @@ interface MemberRating {
   updatedAt: string;
 }
 
-export type { MemberRating };
+interface MemberRatingPage {
+  ratings: MemberRating[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  hasNext: boolean;
+}
+
+export type { MemberRating, MemberRatingPage };
