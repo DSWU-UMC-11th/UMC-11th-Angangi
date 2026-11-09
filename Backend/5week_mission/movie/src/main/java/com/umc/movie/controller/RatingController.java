@@ -7,6 +7,9 @@ import com.umc.movie.dto.RatingPageResponse;
 import com.umc.movie.dto.RatingResponse;
 import com.umc.movie.dto.UpdateRatingRequest;
 import com.umc.movie.service.RatingService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -15,12 +18,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "평점", description = "평점 등록·수정·삭제는 토큰이 필요하고, 회원별 목록 조회는 공개입니다.")
 @RestController
 @RequiredArgsConstructor
 public class RatingController {
 
     private final RatingService ratingService;
 
+    @Operation(summary = "회원별 평점 목록", description = "공개 API라 토큰이 필요 없습니다.")
+    @SecurityRequirements
     @GetMapping("/members/{memberId}/ratings")
     public RatingPageResponse getMemberRatings(
             @PathVariable Long memberId,
@@ -35,6 +41,7 @@ public class RatingController {
         return ratingService.getRatingsByMember(memberId, page, size);
     }
 
+    @Operation(summary = "평점 등록")
     @PostMapping("/ratings")
     public ResponseEntity<ApiResponse<RatingResponse>> create(
             @LoginMember Long memberId,
@@ -45,6 +52,7 @@ public class RatingController {
                 .body(ApiResponse.created("평점 등록에 성공했습니다.", response));
     }
 
+    @Operation(summary = "평점 수정", description = "본인 평점만 수정할 수 있고, 남의 평점이면 403 RATING403_1입니다.")
     @PatchMapping("/ratings/{ratingId}")
     public ResponseEntity<ApiResponse<RatingResponse>> update(
             @LoginMember Long memberId,
@@ -55,6 +63,7 @@ public class RatingController {
         return ResponseEntity.ok(ApiResponse.ok("평점 수정에 성공했습니다.", response));
     }
 
+    @Operation(summary = "평점 삭제", description = "본인 평점만 삭제할 수 있습니다.")
     @DeleteMapping("/ratings/{ratingId}")
     public ResponseEntity<ApiResponse<Void>> delete(
             @LoginMember Long memberId,
