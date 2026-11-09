@@ -106,6 +106,7 @@ class GlobalExceptionHandlerTest {
             "Duplicate entry 'umc@example.com' for key 'member.email'|MEMBER4091|이미 사용 중인 이메일입니다.",
             "Duplicate entry 'moviefan' for key 'member.nickname'|MEMBER4092|이미 사용 중인 닉네임입니다.",
             "Duplicate entry '1-550' for key 'rating.uk_rating_member_movie'|RATING4091|이미 이 영화에 평점을 남기셨습니다.",
+            "Duplicate entry '1-550' for key 'favorite.uk_favorite_member_movie'|FAVORITE409_1|이미 이 영화를 즐겨찾기하셨습니다.",
             "Duplicate entry 'umc@example.com' for key 'email'|MEMBER4091|이미 사용 중인 이메일입니다.",
             "Duplicate entry 'x' for key 'tag.uk_tag_name'|COMMON4091|이미 존재하는 데이터입니다.",
             "Cannot add or update a child row: a foreign key constraint fails|COMMON4090|데이터 제약 조건을 위반한 요청입니다."
