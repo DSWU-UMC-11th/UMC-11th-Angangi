@@ -1,17 +1,15 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useLocation, useParams } from "@tanstack/react-router";
 import { useState, type SubmitEvent } from "react";
 import { favoriteQueries } from "../../api/favorites/favorite-queries";
 import { movieQueries } from "../../api/movies/movie-queries";
 import type { TmdbMovieDetail } from "../../api/movies/models";
 import type { MemberRating } from "../../api/ratings/models";
+import { ratingMutations } from "../../api/ratings/rating-mutations";
 import { ratingQueries } from "../../api/ratings/rating-queries";
+import { getApiFailure } from "../../api/api-response";
 import { BookmarkButton } from "../../components/bookmark-button";
 import { useMyMemberId } from "../../hooks/use-my-member-id";
-import {
-  useDeleteRatingMutation,
-  useSaveRatingMutation,
-} from "../../hooks/use-rating-mutations";
 import { useAuthStore } from "../../stores/auth-store";
 import { cn } from "../../utils/cn";
 import { formatDate } from "../../utils/members/format-date";
@@ -184,6 +182,10 @@ function DetailMessage({ message, onRetry }: DetailMessageProps) {
 
 const COMMENT_MAX_LENGTH = 500;
 
+function alertFailure(error: unknown, fallback: string) {
+  alert(getApiFailure(error)?.message ?? fallback);
+}
+
 const ratingSectionClassName =
   "col-span-full border-t border-(--color-border-default) pt-7 min-[1025px]:col-auto min-[1025px]:border-t-0 min-[1025px]:border-l min-[1025px]:pt-0 min-[1025px]:pl-[34px]";
 
@@ -262,8 +264,8 @@ interface RatingFormProps extends MyRatingProps {
 function RatingForm({ memberId, movieId, rating }: RatingFormProps) {
   const [score, setScore] = useState(rating?.score ?? 0);
   const [comment, setComment] = useState(rating?.comment ?? "");
-  const saveMutation = useSaveRatingMutation(memberId, movieId);
-  const deleteMutation = useDeleteRatingMutation(memberId, movieId);
+  const saveMutation = useMutation(ratingMutations.save(memberId, movieId));
+  const deleteMutation = useMutation(ratingMutations.remove(memberId, movieId));
   const isPending = saveMutation.isPending || deleteMutation.isPending;
 
   const trimmedComment = comment.trim();
@@ -281,17 +283,28 @@ function RatingForm({ memberId, movieId, rating }: RatingFormProps) {
     event.preventDefault();
     if (!canSubmit) return;
 
-    saveMutation.mutate({
-      ratingId: rating?.ratingId ?? null,
-      score,
-      comment: trimmedComment || null,
-    });
+    saveMutation.mutate(
+      {
+        ratingId: rating?.ratingId ?? null,
+        score,
+        comment: trimmedComment || null,
+      },
+      {
+        onSuccess: (response) => alert(response.message),
+        onError: (error) =>
+          alertFailure(error, "평점을 저장하지 못했어요. 다시 시도해 주세요."),
+      },
+    );
   }
 
   function handleDelete() {
     if (!rating || isPending) return;
     if (!confirm("이 영화에 남긴 평점을 삭제할까요?")) return;
-    deleteMutation.mutate(rating.ratingId);
+    deleteMutation.mutate(rating.ratingId, {
+      onSuccess: (response) => alert(response.message),
+      onError: (error) =>
+        alertFailure(error, "평점을 삭제하지 못했어요. 다시 시도해 주세요."),
+    });
   }
 
   return (

@@ -1,14 +1,15 @@
-import { Link } from "@tanstack/react-router";
+import { useMutation } from "@tanstack/react-query";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useState, type SubmitEvent } from "react";
 import { checkEmail } from "../../api/members/check-email";
 import { checkNickname } from "../../api/members/check-nickname";
 import { getApiFailure } from "../../api/api-response";
+import { memberMutations } from "../../api/members/member-mutations";
 import FormField, {
   primaryButtonClassName,
   secondaryButtonClassName,
   type FieldMessage,
 } from "../../components/form-field";
-import { useSignupMutation } from "../../hooks/use-signup-mutation";
 import {
   isEmailValid as checkEmailFormat,
   isNicknameValid as checkNicknameFormat,
@@ -72,7 +73,8 @@ export function SignupPage() {
   const [duplicateCheck, setDuplicateCheck] = useState<
     Record<DuplicateCheckKey, DuplicateCheckStatus>
   >({ email: "idle", nickname: "idle" });
-  const signupMutation = useSignupMutation();
+  const navigate = useNavigate();
+  const signupMutation = useMutation(memberMutations.signup());
   const isSubmitting = signupMutation.isPending;
   const submitError = signupMutation.isError
     ? (getApiFailure(signupMutation.error)?.message ??
@@ -142,6 +144,10 @@ export function SignupPage() {
         password: form.password,
       },
       {
+        onSuccess: (response) => {
+          alert(response.message);
+          navigate({ to: "/login" });
+        },
         onError: (error) => {
           const failure = getApiFailure(error);
           const duplicatedKey = failure && DUPLICATED_CODE_TO_KEY[failure.code];

@@ -1,5 +1,10 @@
+import { useIsMutating, useMutation } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "@tanstack/react-router";
-import { useToggleFavoriteMutation } from "../hooks/use-toggle-favorite-mutation";
+import { getApiFailure } from "../api/api-response";
+import {
+  favoriteMutations,
+  type ToggleFavoriteVariables,
+} from "../api/favorites/favorite-mutations";
 import { useAuthStore } from "../stores/auth-store";
 import { cn } from "../utils/cn";
 
@@ -21,8 +26,14 @@ export function BookmarkButton({
   const accessToken = useAuthStore((state) => state.accessToken);
   const navigate = useNavigate();
   const location = useLocation();
-  const toggleFavoriteMutation = useToggleFavoriteMutation();
-  const isPending = toggleFavoriteMutation.isPending;
+  const toggleFavoriteMutation = useMutation(favoriteMutations.toggle());
+  const isPending =
+    useIsMutating({
+      mutationKey: favoriteMutations.toggle().mutationKey,
+      predicate: (mutation) =>
+        (mutation.state.variables as ToggleFavoriteVariables | undefined)
+          ?.movieId === movieId,
+    }) > 0;
 
   const handleClick = () => {
     if (!accessToken) {
@@ -32,7 +43,17 @@ export function BookmarkButton({
       return;
     }
     if (isPending) return;
-    toggleFavoriteMutation.mutate({ movieId, isFavorite });
+    toggleFavoriteMutation.mutate(
+      { movieId, isFavorite },
+      {
+        onError: (error) => {
+          alert(
+            getApiFailure(error)?.message ??
+              "즐겨찾기를 바꾸지 못했어요. 다시 시도해 주세요.",
+          );
+        },
+      },
+    );
   };
 
   const bookmarkIcon = isFavorite

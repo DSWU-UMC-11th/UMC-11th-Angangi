@@ -1,7 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState, type ReactNode, type SubmitEvent } from "react";
 import { getApiFailure } from "../../api/api-response";
+import { memberMutations } from "../../api/members/member-mutations";
 import { memberQueries } from "../../api/members/member-queries";
 import type { MemberInfo } from "../../api/members/models";
 import FormField, {
@@ -9,7 +10,6 @@ import FormField, {
   type FieldMessage,
 } from "../../components/form-field";
 import RetryMessage from "../../components/retry-message";
-import { useUpdateMeMutation } from "../../hooks/use-update-me-mutation";
 import {
   isNicknameValid as checkNicknameFormat,
   VALIDATION_MESSAGE,
@@ -37,7 +37,7 @@ export function MyProfileEditPage() {
 
 function MyProfileEditForm({ profile }: { profile: MemberInfo }) {
   const navigate = useNavigate();
-  const updateMeMutation = useUpdateMeMutation();
+  const updateMeMutation = useMutation(memberMutations.updateMe());
   const isSubmitting = updateMeMutation.isPending;
   const [nickname, setNickname] = useState(profile.nickname);
 

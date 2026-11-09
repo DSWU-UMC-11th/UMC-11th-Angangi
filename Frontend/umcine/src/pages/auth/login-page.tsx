@@ -1,8 +1,10 @@
-import { Link, useSearch } from "@tanstack/react-router";
+import { useMutation } from "@tanstack/react-query";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useState, type SubmitEvent } from "react";
 import { getApiFailure } from "../../api/api-response";
+import { authMutations } from "../../api/auth/auth-mutations";
 import FormField, { primaryButtonClassName } from "../../components/form-field";
-import { useLoginMutation } from "../../hooks/use-login-mutation";
+import { getSafeRedirect } from "../../utils/auth/get-safe-redirect";
 import {
   isEmailValid as checkEmailFormat,
   VALIDATION_MESSAGE,
@@ -15,7 +17,8 @@ type FormKey = keyof typeof DEFAULT_FORM;
 export function LoginPage() {
   const [form, setForm] = useState(DEFAULT_FORM);
   const { redirect } = useSearch({ from: "/login" });
-  const loginMutation = useLoginMutation(redirect);
+  const navigate = useNavigate();
+  const loginMutation = useMutation(authMutations.login());
   const isSubmitting = loginMutation.isPending;
   const submitError = loginMutation.isError
     ? (getApiFailure(loginMutation.error)?.message ??
@@ -36,10 +39,15 @@ export function LoginPage() {
     event.preventDefault();
     if (!canSubmit || isSubmitting) return;
 
-    loginMutation.mutate({
-      email: form.email.trim(),
-      password: form.password,
-    });
+    loginMutation.mutate(
+      { email: form.email.trim(), password: form.password },
+      {
+        onSuccess: (response) => {
+          alert(`${response.result.nickname}님, 로그인에 성공했어요.`);
+          navigate({ href: getSafeRedirect(redirect), replace: true });
+        },
+      },
+    );
   };
 
   return (
