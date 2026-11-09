@@ -3,6 +3,8 @@ package com.umc.movie.config;
 import com.umc.movie.controller.MemberController;
 import com.umc.movie.dto.NicknameCheckResponse;
 import com.umc.movie.service.MemberService;
+import com.umc.movie.util.JwtUtil;
+import org.springframework.context.annotation.Import;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -30,6 +32,7 @@ class CorsPolicyTest {
     private static final String OTHER_ORIGIN = "http://localhost:5174";
 
     @Nested
+    @Import(JwtUtil.class)
     @WebMvcTest(MemberController.class)
     class 특정_출처만_허용할_때 {
 
@@ -79,6 +82,7 @@ class CorsPolicyTest {
     }
 
     @Nested
+    @Import(JwtUtil.class)
     @WebMvcTest(MemberController.class)
     @TestPropertySource(properties = "cors.allowed-origins=*")
     class 모든_출처를_허용할_때 {
