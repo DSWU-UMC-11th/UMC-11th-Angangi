@@ -25,14 +25,19 @@ public class MemberController {
 
     @GetMapping("/nickname/{nickname}")
     public NicknameCheckResponse checkNickname(
-            @PathVariable @Size(min = 2, max = 12) String nickname
+            @PathVariable
+            @Size(min = 2, max = 12, message = "닉네임은 2자 이상 12자 이하로 입력해주세요.")
+            String nickname
     ) {
         return memberService.checkNickname(nickname);
     }
 
     @GetMapping("/email/{email}")
     public EmailCheckResponse checkEmail(
-            @PathVariable @Size(max = 254) @Email(regexp = EMAIL_REGEX) String email
+            @PathVariable
+            @Size(max = 254, message = "이메일은 254자 이하로 입력해주세요.")
+            @Email(regexp = EMAIL_REGEX, message = "올바른 이메일 형식이 아닙니다.")
+            String email
     ) {
         return memberService.checkEmail(email);
     }

@@ -21,8 +21,13 @@ public class RatingController {
     @GetMapping("/{memberId}/ratings")
     public RatingPageResponse getMemberRatings(
             @PathVariable Long memberId,
-            @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Min(1) @Max(50) int size
+            @RequestParam(defaultValue = "0")
+            @Min(value = 0, message = "page는 0 이상이어야 합니다.")
+            int page,
+            @RequestParam(defaultValue = "10")
+            @Min(value = 1, message = "size는 1 이상이어야 합니다.")
+            @Max(value = 50, message = "size는 50 이하여야 합니다.")
+            int size
     ) {
         return ratingService.getRatingsByMember(memberId, page, size);
     }
