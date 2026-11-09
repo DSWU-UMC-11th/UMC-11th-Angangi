@@ -83,6 +83,15 @@ class AuthInterceptorTest {
     }
 
     @Test
+    void 만료된_토큰은_토큰이_없을_때와_다른_AUTH401_4() throws Exception {
+        String expired = new JwtUtil("umc-movie-test-only-secret-key-at-least-32-bytes", -120)
+                .createAccessToken(1L, "noco@umc.com");
+
+        expectUnauthorized(mockMvc.perform(delete(PROTECTED_URL).header(HttpHeaders.AUTHORIZATION, "Bearer " + expired)),
+                "AUTH401_4", "토큰이 만료되었습니다. 다시 로그인해주세요.");
+    }
+
+    @Test
     void 유효한_토큰이면_컨트롤러까지_통과한다() throws Exception {
         String token = jwtUtil.createAccessToken(1L, "noco@umc.com");
 

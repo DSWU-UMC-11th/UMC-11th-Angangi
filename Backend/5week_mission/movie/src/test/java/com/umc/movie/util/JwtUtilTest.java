@@ -71,6 +71,24 @@ class JwtUtilTest {
     }
 
     @Test
+    void 만료된_토큰은_위조와_구분해_AUTH401_4() {
+        // 유효시간을 음수로 주면 발급하는 순간 이미 120초 전에 만료된 토큰이 돼요
+        JwtUtil expiredIssuer = new JwtUtil(SECRET, -120);
+        String token = expiredIssuer.createAccessToken(1L, "noco@umc.com");
+
+        assertErrorCode(() -> jwtUtil.getMemberId(token), ErrorCode.AUTH_TOKEN_EXPIRED);
+    }
+
+    @Test
+    void 만료되고_60초까지는_시계_오차_여유로_아직_통과한다() {
+        // clockSkewSeconds(60) 때문에 JWT_ACCESS_EXPIRATION=60이면 실제로는 약 2분 뒤에 만료 응답이 나와요
+        JwtUtil justExpiredIssuer = new JwtUtil(SECRET, -30);
+        String token = justExpiredIssuer.createAccessToken(1L, "noco@umc.com");
+
+        assertThat(jwtUtil.getMemberId(token)).isEqualTo(1L);
+    }
+
+    @Test
     void 비밀키가_32바이트보다_짧으면_만들_때_실패한다() {
         assertThatThrownBy(() -> new JwtUtil("too-short-secret", 3600))
                 .isInstanceOf(WeakKeyException.class);
