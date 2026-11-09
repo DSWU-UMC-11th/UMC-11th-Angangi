@@ -1,6 +1,7 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
-import { useEffect, useState, type SubmitEvent } from "react";
-import { getMovieDetail } from "../../api/movies/get-movie-detail";
+import { useState, type SubmitEvent } from "react";
+import { movieQueries } from "../../api/movies/movie-queries";
 import type { TmdbMovieDetail } from "../../api/movies/models";
 import { BookmarkButton } from "../../components/bookmark-button";
 import { cn } from "../../utils/cn";
@@ -28,64 +29,36 @@ function formatRuntime(runtime: number | null) {
 }
 
 export function MovieDetailPage() {
-  const { movieId } = useParams({ from: "/movies/$movieId" });
-  const parsedMovieId = Number(movieId);
+  const { movieId: movieIdParam } = useParams({ from: "/movies/$movieId" });
+  const movieId = Number(movieIdParam);
+  const isValid = isValidMovieId(movieId);
 
-  // 유효하지 않은 ID는 요청하지 않아요
-  if (!isValidMovieId(parsedMovieId)) {
+  const movieDetailQuery = useQuery({
+    ...movieQueries.detail(movieId),
+    enabled: isValid,
+  });
+
+  // 요청하지 않아도 isPending이 참이라 잘못된 번호 안내를 로딩보다 먼저 확인해요
+  if (!isValid) {
     return <DetailMessage message="올바르지 않은 영화 번호예요." />;
   }
-
-  // 영화 ID가 바뀌면 key가 바뀌어 상세 state가 처음 상태로 초기화돼요
-  return <MovieDetailContent key={parsedMovieId} movieId={parsedMovieId} />;
-}
-
-function MovieDetailContent({ movieId }: { movieId: number }) {
-  const [movie, setMovie] = useState<TmdbMovieDetail | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  // 값이 바뀌면 Effect가 다시 실행되어 같은 영화 ID로 다시 요청해요
-  const [retryCount, setRetryCount] = useState(0);
-
-  useEffect(() => {
-    let ignore = false;
-
-    async function loadMovie() {
-      try {
-        const response = await getMovieDetail(movieId);
-        if (!ignore) setMovie(response);
-      } catch (error) {
-        if (!ignore) setErrorMessage(getMovieDetailErrorMessage(error));
-      } finally {
-        if (!ignore) setIsLoading(false);
-      }
-    }
-
-    loadMovie();
-
-    return () => {
-      ignore = true;
-    };
-  }, [movieId, retryCount]);
-
-  function handleRetry() {
-    setIsLoading(true);
-    setErrorMessage(null);
-    setRetryCount((count) => count + 1);
-  }
-
-  if (isLoading) {
+  if (movieDetailQuery.isPending) {
     return <DetailMessage message="영화 정보를 불러오는 중이에요." />;
   }
-  if (errorMessage || !movie) {
+  if (movieDetailQuery.isError) {
     return (
       <DetailMessage
-        message={errorMessage ?? "영화를 찾을 수 없어요."}
-        onRetry={handleRetry}
+        message={getMovieDetailErrorMessage(movieDetailQuery.error)}
+        onRetry={() => movieDetailQuery.refetch()}
       />
     );
   }
 
+  // 영화가 바뀌면 평점 입력 폼의 state도 처음 상태로 돌아가도록 key를 줘요
+  return <MovieDetailContent key={movieId} movie={movieDetailQuery.data} />;
+}
+
+function MovieDetailContent({ movie }: { movie: TmdbMovieDetail }) {
   const backdropUrl = getTmdbBackdropUrl(movie.backdrop_path);
   const posterUrl = getTmdbPosterUrl(movie.poster_path);
 

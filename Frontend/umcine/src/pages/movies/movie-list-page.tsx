@@ -1,6 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { getMovies } from "../../api/movies/get-movies";
+import { movieQueries } from "../../api/movies/movie-queries";
 import type { TmdbMovieListItem } from "../../api/movies/models";
 import MovieGrid from "../../components/movie-grid";
 import Pagination from "../../components/pagination";
@@ -40,52 +40,27 @@ export function MovieListPage() {
   const sortOrder = useViewSettingsStore((state) => state.sortOrder);
   const setSortOrder = useViewSettingsStore((state) => state.setSortOrder);
 
-  const [movies, setMovies] = useState<TmdbMovieListItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  // 값이 바뀌면 Effect가 다시 실행되어 마지막 요청을 다시 보내요
-  const [retryCount, setRetryCount] = useState(0);
+  const moviesQuery = useQuery(movieQueries.list(currentPage));
 
-  useEffect(() => {
-    let ignore = false;
-    async function loadMovies() {
-      setIsLoading(true);
-      setErrorMessage(null);
-
-      try {
-        const response = await getMovies({ page: currentPage });
-        if (!ignore) setMovies(response.results);
-      } catch {
-        if (!ignore) setErrorMessage("영화 목록을 불러오지 못했어요.");
-      } finally {
-        if (!ignore) setIsLoading(false);
-      }
-    }
-
-    loadMovies();
-
-    return () => {
-      ignore = true;
-    };
-  }, [currentPage, retryCount]);
+  const movies = moviesQuery.data?.results ?? [];
 
   function handlePageChange(nextPage: number) {
     navigate({ search: nextPage === 1 ? {} : { page: nextPage } });
   }
 
   function renderContent() {
-    if (isLoading) {
+    if (moviesQuery.isPending) {
       return (
         <p className="py-20 text-center text-(--color-text-secondary)">
           영화 목록을 불러오는 중이에요.
         </p>
       );
     }
-    if (errorMessage) {
+    if (moviesQuery.isError) {
       return (
         <RetryMessage
-          message={errorMessage}
-          onRetry={() => setRetryCount((count) => count + 1)}
+          message="영화 목록을 불러오지 못했어요."
+          onRetry={() => moviesQuery.refetch()}
         />
       );
     }

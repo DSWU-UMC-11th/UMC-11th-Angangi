@@ -1,8 +1,8 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type SubmitEvent } from "react";
-import type { TmdbMovieListItem } from "../../api/movies/models";
+import { useRef, useState, type SubmitEvent } from "react";
 import type { MovieCardItem } from "../../types/movie-card";
-import { searchMovies } from "../../api/movies/search-movies";
+import { movieQueries } from "../../api/movies/movie-queries";
 import { BookmarkButton } from "../../components/bookmark-button";
 import RetryMessage from "../../components/retry-message";
 import { cn } from "../../utils/cn";
@@ -30,54 +30,31 @@ export function SearchPage() {
         영화 검색
       </h1>
       <SearchForm key={query} initialQuery={query} variant="compact" />
-      {/* 검색어가 바뀌면 key가 바뀌어 결과 state가 처음 상태로 초기화돼요 */}
-      <SearchResults key={normalizedQuery} query={normalizedQuery} />
+      <SearchResults query={normalizedQuery} />
     </main>
   );
 }
 
 function SearchResults({ query }: { query: string }) {
-  const [movies, setMovies] = useState<TmdbMovieListItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  // 값이 바뀌면 Effect가 다시 실행되어 같은 검색어로 다시 요청해요
-  const [retryCount, setRetryCount] = useState(0);
+  const searchQuery = useQuery(movieQueries.search(query));
 
-  useEffect(() => {
-    let ignore = false;
-
-    searchMovies({ query })
-      .then((response) => {
-        if (!ignore) setMovies(response.results);
-      })
-      .catch(() => {
-        if (!ignore) setErrorMessage("검색 결과를 불러오지 못했어요.");
-      })
-      .finally(() => {
-        if (!ignore) setIsLoading(false);
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [query, retryCount]);
-
-  function handleRetry() {
-    setIsLoading(true);
-    setErrorMessage(null);
-    setRetryCount((count) => count + 1);
-  }
+  const movies = searchQuery.data?.results ?? [];
 
   function renderResults() {
-    if (isLoading) {
+    if (searchQuery.isLoading) {
       return (
         <p className="py-20 text-center text-(--color-text-secondary)">
           검색 결과를 불러오는 중이에요.
         </p>
       );
     }
-    if (errorMessage) {
-      return <RetryMessage message={errorMessage} onRetry={handleRetry} />;
+    if (searchQuery.isError) {
+      return (
+        <RetryMessage
+          message="검색 결과를 불러오지 못했어요."
+          onRetry={() => searchQuery.refetch()}
+        />
+      );
     }
     if (movies.length === 0) {
       return (
@@ -99,7 +76,7 @@ function SearchResults({ query }: { query: string }) {
     <section className="mt-6">
       <div className="flex items-center justify-between gap-4 border-b border-(--color-border-default) pb-4">
         <h2 className="text-lg font-bold">‘{query}’ 검색 결과</h2>
-        {!isLoading && !errorMessage && (
+        {searchQuery.isSuccess && (
           <p className="shrink-0 text-xs text-(--color-text-tertiary)">
             영화 {movies.length}편
           </p>
