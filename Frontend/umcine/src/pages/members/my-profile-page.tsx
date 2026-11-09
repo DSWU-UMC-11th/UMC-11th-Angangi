@@ -4,15 +4,14 @@ import { memberQueries } from "../../api/members/member-queries";
 import RetryMessage from "../../components/retry-message";
 import { clearSession } from "../../utils/auth/clear-session";
 import { formatDate } from "../../utils/members/format-date";
+import { MyFavoritesSection } from "./my-favorites-section";
 
 export function MyProfilePage() {
   const navigate = useNavigate();
-  // (protected) layout을 통과했으니 토큰이 있어요.
-  // 헤더와 같은 key라, 헤더가 이미 받아 온 데이터가 있으면 요청 없이 바로 보여줘요
   const meQuery = useQuery(memberQueries.me());
 
   const handleLogout = async () => {
-    // 먼저 홈으로 옮긴 뒤 지워요. 반대로 하면 layout이 /login으로 먼저 보내요
+    // 먼저 이동해야 layout이 /login으로 보내지 않아요
     await navigate({ to: "/" });
     clearSession();
   };
@@ -97,6 +96,8 @@ export function MyProfilePage() {
           alt=""
         />
       </Link>
+
+      <MyFavoritesSection />
 
       <button
         type="button"

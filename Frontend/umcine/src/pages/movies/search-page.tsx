@@ -5,6 +5,7 @@ import type { MovieCardItem } from "../../types/movie-card";
 import { movieQueries } from "../../api/movies/movie-queries";
 import { BookmarkButton } from "../../components/bookmark-button";
 import RetryMessage from "../../components/retry-message";
+import { useFavoriteMovieIds } from "../../hooks/use-favorite-movie-ids";
 import { cn } from "../../utils/cn";
 import { toMovieCardItem } from "../../utils/movies/to-movie-card-item";
 
@@ -37,6 +38,7 @@ export function SearchPage() {
 
 function SearchResults({ query }: { query: string }) {
   const searchQuery = useQuery(movieQueries.search(query));
+  const favoriteMovieIds = useFavoriteMovieIds();
 
   const movies = searchQuery.data?.results ?? [];
 
@@ -66,7 +68,11 @@ function SearchResults({ query }: { query: string }) {
     return (
       <ul className="grid grid-cols-1 gap-x-10 min-[1025px]:grid-cols-2">
         {movies.map(toMovieCardItem).map((movie) => (
-          <SearchResultItem key={movie.id} movie={movie} />
+          <SearchResultItem
+            key={movie.id}
+            movie={movie}
+            isFavorite={favoriteMovieIds.has(movie.id)}
+          />
         ))}
       </ul>
     );
@@ -87,7 +93,12 @@ function SearchResults({ query }: { query: string }) {
   );
 }
 
-function SearchResultItem({ movie }: { movie: MovieCardItem }) {
+interface SearchResultItemProps {
+  movie: MovieCardItem;
+  isFavorite: boolean;
+}
+
+function SearchResultItem({ movie, isFavorite }: SearchResultItemProps) {
   const detailLinkProps = {
     to: "/movies/$movieId",
     params: { movieId: String(movie.id) },
@@ -113,6 +124,7 @@ function SearchResultItem({ movie }: { movie: MovieCardItem }) {
           className="absolute top-2 right-2"
           movieId={movie.id}
           movieTitle={movie.title}
+          isFavorite={isFavorite}
         />
       </div>
       <div className="flex min-w-0 flex-col pt-1">

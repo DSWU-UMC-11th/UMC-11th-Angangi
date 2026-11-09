@@ -1,4 +1,4 @@
-import type { TmdbMovieListItem } from "../../api/movies/models";
+import type { TmdbMovie } from "../../api/movies/models";
 import type { MovieCardItem } from "../../types/movie-card";
 import { getTmdbPosterUrl } from "./tmdb-image";
 
@@ -7,7 +7,7 @@ function formatReleaseDate(releaseDate: string) {
   return releaseDate ? releaseDate.replaceAll("-", ".") : "개봉일 미정";
 }
 
-export function toMovieCardItem(movie: TmdbMovieListItem): MovieCardItem {
+export function toMovieCardItem(movie: TmdbMovie): MovieCardItem {
   return {
     id: movie.id,
     title: movie.title,

@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
 import { useState, type SubmitEvent } from "react";
+import { favoriteQueries } from "../../api/favorites/favorite-queries";
 import { movieQueries } from "../../api/movies/movie-queries";
 import type { TmdbMovieDetail } from "../../api/movies/models";
 import { BookmarkButton } from "../../components/bookmark-button";
+import { useAuthStore } from "../../stores/auth-store";
 import { cn } from "../../utils/cn";
 import { getMovieDetailErrorMessage } from "../../utils/movies/get-movie-detail-error-message";
 import {
@@ -59,6 +61,12 @@ export function MovieDetailPage() {
 }
 
 function MovieDetailContent({ movie }: { movie: TmdbMovieDetail }) {
+  const accessToken = useAuthStore((state) => state.accessToken);
+  const favoriteStatusQuery = useQuery({
+    ...favoriteQueries.status(movie.id),
+    enabled: Boolean(accessToken),
+  });
+  const isFavorite = favoriteStatusQuery.data?.isFavorite ?? false;
   const backdropUrl = getTmdbBackdropUrl(movie.backdrop_path);
   const posterUrl = getTmdbPosterUrl(movie.poster_path);
 
@@ -137,6 +145,7 @@ function MovieDetailContent({ movie }: { movie: TmdbMovieDetail }) {
             className="mt-4"
             movieId={movie.id}
             movieTitle={movie.title}
+            isFavorite={isFavorite}
             variant="label"
           />
         </section>
