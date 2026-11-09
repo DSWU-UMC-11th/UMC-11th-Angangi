@@ -89,7 +89,7 @@ class RatingServiceTest {
     }
 
     @Test
-    void 같은_영화에_이미_평점이_있으면_저장하지_않는다() {
+    void 같은_영화에_이미_평점이_있으면_RATING4091이고_저장하지_않는다() {
         given(memberRepository.findById(OWNER_ID)).willReturn(Optional.of(owner));
         given(ratingRepository.existsByMember_MemberIdAndMovieId(OWNER_ID, 550L)).willReturn(true);
 
