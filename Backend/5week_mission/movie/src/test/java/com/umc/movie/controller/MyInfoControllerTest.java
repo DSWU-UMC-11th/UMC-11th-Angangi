@@ -1,6 +1,7 @@
 package com.umc.movie.controller;
 
 import com.umc.movie.dto.MemberInfoResponse;
+import com.umc.movie.dto.MemberUpdateRequest;
 import com.umc.movie.exception.BusinessException;
 import com.umc.movie.exception.ErrorCode;
 import com.umc.movie.service.MemberService;
@@ -10,16 +11,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -73,6 +78,45 @@ class MyInfoControllerTest {
                 .andExpect(jsonPath("$.code").value("AUTH401_2"));
 
         verify(memberService, never()).getMyInfo(anyLong());
+    }
+
+    @Test
+    void 닉네임을_수정하면_200과_바뀐_정보를_응답한다() throws Exception {
+        given(memberService.updateMyInfo(eq(1L), any(MemberUpdateRequest.class)))
+                .willReturn(new MemberInfoResponse("noco@umc.com", "영화조아", LocalDateTime.now()));
+
+        mockMvc.perform(patch("/members/me")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(1L))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nickname\": \"영화조아\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("회원 정보를 수정했습니다."))
+                .andExpect(jsonPath("$.result.nickname").value("영화조아"));
+    }
+
+    @Test
+    void 닉네임_규칙을_어기면_서비스까지_가지_않고_400() throws Exception {
+        mockMvc.perform(patch("/members/me")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(1L))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nickname\": \"a\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("닉네임은 2자 이상 12자 이하로 입력해주세요."));
+
+        verify(memberService, never()).updateMyInfo(anyLong(), any());
+    }
+
+    @Test
+    void 다른_회원이_쓰는_닉네임이면_409와_MEMBER4092() throws Exception {
+        given(memberService.updateMyInfo(eq(1L), any(MemberUpdateRequest.class)))
+                .willThrow(new BusinessException(ErrorCode.MEMBER_NICKNAME_DUPLICATED));
+
+        mockMvc.perform(patch("/members/me")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(1L))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nickname\": \"민서\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("MEMBER4092"));
     }
 
     @Test

@@ -2,6 +2,7 @@ package com.umc.movie.service;
 
 import com.umc.movie.dto.MemberInfoResponse;
 import com.umc.movie.dto.MemberResponse;
+import com.umc.movie.dto.MemberUpdateRequest;
 import com.umc.movie.dto.SignUpRequest;
 import com.umc.movie.entity.Member;
 import com.umc.movie.exception.BusinessException;
@@ -87,6 +88,41 @@ class MemberServiceTest {
         assertThatThrownBy(() -> memberService.getMyInfo(99L))
                 .isInstanceOfSatisfying(BusinessException.class,
                         exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.MEMBER_NOT_FOUND));
+    }
+
+    @Test
+    void 닉네임을_바꾸면_엔티티가_바뀌고_save는_부르지_않는다() {
+        Member member = Member.builder().email("noco@umc.com").password("hash").nickname("수현").build();
+        given(memberRepository.findById(1L)).willReturn(Optional.of(member));
+
+        MemberInfoResponse response = memberService.updateMyInfo(1L, new MemberUpdateRequest("영화조아"));
+
+        assertThat(member.getNickname()).isEqualTo("영화조아");
+        assertThat(response.nickname()).isEqualTo("영화조아");
+        verify(memberRepository, never()).save(any());
+    }
+
+    @Test
+    void 지금_내_닉네임을_그대로_보내면_중복으로_막지_않는다() {
+        Member member = Member.builder().email("noco@umc.com").password("hash").nickname("수현").build();
+        given(memberRepository.findById(1L)).willReturn(Optional.of(member));
+        // existsByNickname("수현")은 true지만, 나를 뺀 조회는 false예요
+        given(memberRepository.existsByNickname("수현")).willReturn(true);
+        given(memberRepository.existsByNicknameAndMemberIdNot("수현", 1L)).willReturn(false);
+
+        assertThat(memberService.updateMyInfo(1L, new MemberUpdateRequest("수현")).nickname()).isEqualTo("수현");
+    }
+
+    @Test
+    void 다른_회원이_쓰는_닉네임이면_MEMBER4092이고_바꾸지_않는다() {
+        Member member = Member.builder().email("noco@umc.com").password("hash").nickname("수현").build();
+        given(memberRepository.findById(1L)).willReturn(Optional.of(member));
+        given(memberRepository.existsByNicknameAndMemberIdNot("민서", 1L)).willReturn(true);
+
+        assertThatThrownBy(() -> memberService.updateMyInfo(1L, new MemberUpdateRequest("민서")))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.MEMBER_NICKNAME_DUPLICATED));
+        assertThat(member.getNickname()).isEqualTo("수현");
     }
 
     @Test

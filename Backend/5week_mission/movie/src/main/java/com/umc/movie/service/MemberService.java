@@ -3,6 +3,7 @@ package com.umc.movie.service;
 import com.umc.movie.dto.EmailCheckResponse;
 import com.umc.movie.dto.MemberInfoResponse;
 import com.umc.movie.dto.MemberResponse;
+import com.umc.movie.dto.MemberUpdateRequest;
 import com.umc.movie.dto.NicknameCheckResponse;
 import com.umc.movie.dto.SignUpRequest;
 import com.umc.movie.entity.Member;
@@ -54,6 +55,20 @@ public class MemberService {
     @Transactional(readOnly = true)
     public MemberInfoResponse getMyInfo(Long memberId) {
         return MemberInfoResponse.from(findMember(memberId));
+    }
+
+    @Transactional
+    public MemberInfoResponse updateMyInfo(Long memberId, MemberUpdateRequest request) {
+        Member member = findMember(memberId);
+
+        // 지금 내 닉네임 그대로 보내도 중복으로 막히지 않도록 나 자신은 빼고 확인해요.
+        // 회원가입과 같은 상황이라 같은 코드(MEMBER4092)를 써요. 동시에 바꾸는 경우는 DB UNIQUE 제약이 막아요
+        if (memberRepository.existsByNicknameAndMemberIdNot(request.nickname(), memberId)) {
+            throw new BusinessException(ErrorCode.MEMBER_NICKNAME_DUPLICATED);
+        }
+
+        member.updateNickname(request.nickname()); // 변경 감지로 트랜잭션이 끝날 때 UPDATE돼요
+        return MemberInfoResponse.from(member);
     }
 
     // 토큰은 유효하지만 그사이 탈퇴 등으로 회원이 없어졌을 수 있어요
