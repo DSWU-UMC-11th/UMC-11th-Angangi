@@ -1,15 +1,18 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { useRef, useState, type SubmitEvent } from "react";
+import { useEffect, useRef, useState, type SubmitEvent } from "react";
+import type { TmdbMovieListItem } from "../../api/movies/models";
+import type { MovieCardItem } from "../../types/movie-card";
+import { searchMovies } from "../../api/movies/search-movies";
 import { BookmarkButton } from "../../components/bookmark-button";
-import { movies } from "../../data/movies";
-import type { Movie } from "../../types/movie";
+import RetryMessage from "../../components/retry-message";
 import { cn } from "../../utils/cn";
+import { toMovieCardItem } from "../../utils/movies/to-movie-card-item";
 
 export function SearchPage() {
-  const { query } = useSearch({ from: "/search" });
-  const normalizedQuery = query?.trim().toLowerCase() ?? "";
+  const { query = "" } = useSearch({ from: "/search" });
+  const normalizedQuery = query.trim();
 
-  // 검색어가 없으면 가운데 정렬된 검색 시작 화면을 보여줘요
+  // 검색어가 없으면 요청하지 않고 가운데 정렬된 검색 시작 화면을 보여줘요
   if (!normalizedQuery) {
     return (
       <main className="page-container flex flex-1 flex-col items-center pt-50 pb-20 max-[768px]:pt-30">
@@ -21,43 +24,93 @@ export function SearchPage() {
     );
   }
 
-  const searchResults = movies.filter(
-    (movie) =>
-      movie.title.toLowerCase().includes(normalizedQuery) ||
-      movie.originalTitle.toLowerCase().includes(normalizedQuery),
-  );
-
   return (
     <main className="page-container flex-1 pt-8 pb-20">
       <h1 className="mb-5 text-[28px] font-extrabold tracking-[-0.02em] min-[481px]:text-4xl">
         영화 검색
       </h1>
-      <SearchForm key={query} initialQuery={query ?? ""} variant="compact" />
-
-      <section className="mt-6">
-        <div className="flex items-center justify-between gap-4 border-b border-(--color-border-default) pb-4">
-          <h2 className="text-lg font-bold">‘{query}’ 검색 결과</h2>
-          <p className="shrink-0 text-xs text-(--color-text-tertiary)">
-            영화 {searchResults.length}편
-          </p>
-        </div>
-        {searchResults.length === 0 ? (
-          <p className="py-20 text-center text-(--color-text-secondary)">
-            검색 결과가 없어요.
-          </p>
-        ) : (
-          <ul className="grid grid-cols-1 gap-x-10 min-[1025px]:grid-cols-2">
-            {searchResults.map((movie) => (
-              <SearchResultItem key={movie.id} movie={movie} />
-            ))}
-          </ul>
-        )}
-      </section>
+      <SearchForm key={query} initialQuery={query} variant="compact" />
+      {/* 검색어가 바뀌면 key가 바뀌어 결과 state가 처음 상태로 초기화돼요 */}
+      <SearchResults key={normalizedQuery} query={normalizedQuery} />
     </main>
   );
 }
 
-function SearchResultItem({ movie }: { movie: Movie }) {
+function SearchResults({ query }: { query: string }) {
+  const [movies, setMovies] = useState<TmdbMovieListItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // 값이 바뀌면 Effect가 다시 실행되어 같은 검색어로 다시 요청해요
+  const [retryCount, setRetryCount] = useState(0);
+
+  useEffect(() => {
+    let ignore = false;
+
+    searchMovies({ query })
+      .then((response) => {
+        if (!ignore) setMovies(response.results);
+      })
+      .catch(() => {
+        if (!ignore) setErrorMessage("검색 결과를 불러오지 못했어요.");
+      })
+      .finally(() => {
+        if (!ignore) setIsLoading(false);
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [query, retryCount]);
+
+  function handleRetry() {
+    setIsLoading(true);
+    setErrorMessage(null);
+    setRetryCount((count) => count + 1);
+  }
+
+  function renderResults() {
+    if (isLoading) {
+      return (
+        <p className="py-20 text-center text-(--color-text-secondary)">
+          검색 결과를 불러오는 중이에요.
+        </p>
+      );
+    }
+    if (errorMessage) {
+      return <RetryMessage message={errorMessage} onRetry={handleRetry} />;
+    }
+    if (movies.length === 0) {
+      return (
+        <p className="py-20 text-center text-(--color-text-secondary)">
+          조건에 맞는 영화가 없어요.
+        </p>
+      );
+    }
+    return (
+      <ul className="grid grid-cols-1 gap-x-10 min-[1025px]:grid-cols-2">
+        {movies.map(toMovieCardItem).map((movie) => (
+          <SearchResultItem key={movie.id} movie={movie} />
+        ))}
+      </ul>
+    );
+  }
+
+  return (
+    <section className="mt-6">
+      <div className="flex items-center justify-between gap-4 border-b border-(--color-border-default) pb-4">
+        <h2 className="text-lg font-bold">‘{query}’ 검색 결과</h2>
+        {!isLoading && !errorMessage && (
+          <p className="shrink-0 text-xs text-(--color-text-tertiary)">
+            영화 {movies.length}편
+          </p>
+        )}
+      </div>
+      {renderResults()}
+    </section>
+  );
+}
+
+function SearchResultItem({ movie }: { movie: MovieCardItem }) {
   const detailLinkProps = {
     to: "/movies/$movieId",
     params: { movieId: String(movie.id) },
@@ -67,11 +120,17 @@ function SearchResultItem({ movie }: { movie: Movie }) {
     <li className="flex gap-5 border-b border-(--color-border-default) py-5">
       <div className="relative w-24 shrink-0 min-[481px]:w-32.75">
         <Link {...detailLinkProps} tabIndex={-1} aria-hidden="true">
-          <img
-            className="aspect-131/197 w-full rounded-lg bg-(--color-border-default) object-cover"
-            src={movie.posterPath}
-            alt=""
-          />
+          {movie.posterUrl ? (
+            <img
+              className="aspect-131/197 w-full rounded-lg bg-(--color-border-default) object-cover"
+              src={movie.posterUrl}
+              alt=""
+            />
+          ) : (
+            <span className="flex aspect-131/197 w-full items-center justify-center rounded-lg bg-(--color-border-default) text-xs text-(--color-text-tertiary)">
+              이미지 없음
+            </span>
+          )}
         </Link>
         <BookmarkButton
           className="absolute top-2 right-2"
