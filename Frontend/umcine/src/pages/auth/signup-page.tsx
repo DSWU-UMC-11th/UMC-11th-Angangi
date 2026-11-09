@@ -1,14 +1,14 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { useState, type SubmitEvent } from "react";
 import { checkEmail } from "../../api/members/check-email";
 import { checkNickname } from "../../api/members/check-nickname";
-import { signup } from "../../api/members/signup";
 import { getApiFailure } from "../../api/api-response";
 import FormField, {
   primaryButtonClassName,
   secondaryButtonClassName,
   type FieldMessage,
 } from "../../components/form-field";
+import { useSignupMutation } from "../../hooks/use-signup-mutation";
 import {
   isEmailValid as checkEmailFormat,
   isNicknameValid as checkNicknameFormat,
@@ -73,9 +73,13 @@ export function SignupPage() {
   const [duplicateCheck, setDuplicateCheck] = useState<
     Record<DuplicateCheckKey, DuplicateCheckStatus>
   >({ email: "idle", nickname: "idle" });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const navigate = useNavigate();
+  // 7주차의 isSubmitting, submitError state는 mutation의 isPending, error로 대신해요
+  const signupMutation = useSignupMutation();
+  const isSubmitting = signupMutation.isPending;
+  const submitError = signupMutation.isError
+    ? (getApiFailure(signupMutation.error)?.message ??
+      "회원가입에 실패했어요. 다시 시도해 주세요.")
+    : null;
 
   // 입력값의 유효성 검사
   const trimmedEmail = form.email.trim();
@@ -108,7 +112,8 @@ export function SignupPage() {
 
   const handleChangeField = (key: FormKey, value: string) => {
     if (isSubmitting) return;
-    setSubmitError(null);
+    // 값을 고치기 시작하면 이전 실패 안내를 지워요
+    if (signupMutation.isError) signupMutation.reset();
     if (key === "email" || key === "nickname") {
       if (duplicateCheck[key] === "checking") return;
       // 확인한 값을 바꾸면 다시 중복 확인해야 해요
@@ -134,34 +139,28 @@ export function SignupPage() {
     }
   };
 
-  const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: SubmitEvent<HTMLFormElement>) => {
     // 폼 제출 시 페이지 새로고침 방지
     event.preventDefault();
     if (!canSubmit || isSubmitting) return;
 
-    setIsSubmitting(true);
-    setSubmitError(null);
-    try {
-      const response = await signup({
+    signupMutation.mutate(
+      {
         email: trimmedEmail,
         nickname: trimmedNickname,
         password: form.password,
-      });
-      alert(response.message);
-      navigate({ to: "/login" });
-    } catch (error) {
-      // 실패하면 입력값을 유지한 채 서버의 메시지를 보여줘요
-      const failure = getApiFailure(error);
-      const duplicatedKey = failure && DUPLICATED_CODE_TO_KEY[failure.code];
-      if (duplicatedKey) {
-        setDuplicateCheck((prev) => ({ ...prev, [duplicatedKey]: "taken" }));
-      }
-      setSubmitError(
-        failure?.message ?? "회원가입에 실패했어요. 다시 시도해 주세요.",
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
+      },
+      {
+        // 중복 필드 표시는 이 화면의 state라서 hook이 아니라 mutate 쪽 콜백에서 처리해요
+        onError: (error) => {
+          const failure = getApiFailure(error);
+          const duplicatedKey = failure && DUPLICATED_CODE_TO_KEY[failure.code];
+          if (duplicatedKey) {
+            setDuplicateCheck((prev) => ({ ...prev, [duplicatedKey]: "taken" }));
+          }
+        },
+      },
+    );
   };
 
   return (
