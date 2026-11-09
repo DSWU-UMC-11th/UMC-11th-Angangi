@@ -1,33 +1,32 @@
 package com.umc.movie.controller;
 
 import com.umc.movie.dto.CreateRatingRequest;
+import com.umc.movie.dto.RatingResponse;
 import com.umc.movie.dto.UpdateRatingRequest;
 import com.umc.movie.service.RatingService;
 import com.umc.movie.util.JwtUtil;
-import org.springframework.context.annotation.Import;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.server.ResponseStatusException;
+
+import java.time.LocalDateTime;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -35,33 +34,50 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(RatingController.class)
 class RatingCommandControllerTest {
 
+    private static final LocalDateTime NOW = LocalDateTime.of(2026, 11, 9, 12, 0);
+
     @Autowired
     private MockMvc mockMvc;
 
-    @MockitoBean
-    private RatingService ratingService;
-
     @Autowired
     private JwtUtil jwtUtil;
+
+    @MockitoBean
+    private RatingService ratingService;
 
     private String bearer(Long memberId) {
         return "Bearer " + jwtUtil.createAccessToken(memberId, "member" + memberId + "@umc.com");
     }
 
     @Test
-    void 평점을_등록하면_201과_평점_ID를_응답한다() throws Exception {
-        given(ratingService.create(eq(1L), any(CreateRatingRequest.class))).willReturn(4L);
+    void 평점을_등록하면_201과_등록한_평점을_응답한다() throws Exception {
+        given(ratingService.create(eq(1L), any(CreateRatingRequest.class)))
+                .willReturn(new RatingResponse(4L, 680L, 5, "대사가 기억에 남아요", NOW, NOW));
 
-        mockMvc.perform(post("/members/1/ratings")
+        mockMvc.perform(post("/ratings")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"movieId": 680, "score": 5, "comment": "대사가 기억에 남아요"}
                                 """))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.isSuccess").value(true))
                 .andExpect(jsonPath("$.code").value("COMMON201"))
                 .andExpect(jsonPath("$.message").value("평점 등록에 성공했습니다."))
-                .andExpect(jsonPath("$.result").value(4));
+                .andExpect(jsonPath("$.result.ratingId").value(4))
+                .andExpect(jsonPath("$.result.movieId").value(680));
+    }
+
+    @Test
+    void 바디에_memberId를_넣어도_무시하고_토큰의_회원으로_등록한다() throws Exception {
+        mockMvc.perform(post("/ratings")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(1L))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"memberId": 2, "movieId": 680, "score": 5}
+                                """))
+                .andExpect(status().isCreated());
+
+        verify(ratingService).create(eq(1L), any(CreateRatingRequest.class));
     }
 
     @ParameterizedTest
@@ -73,7 +89,10 @@ class RatingCommandControllerTest {
             "{\"movieId\": 680, \"score\": 6}|별점은 5점 이하여야 합니다."
     })
     void 평점_등록_입력이_잘못되면_400과_이유를_응답한다(String body, String message) throws Exception {
-        mockMvc.perform(post("/members/1/ratings").contentType(MediaType.APPLICATION_JSON).content(body))
+        mockMvc.perform(post("/ratings")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(1L))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("COMMON4001"))
                 .andExpect(jsonPath("$.message").value(message));
@@ -85,7 +104,8 @@ class RatingCommandControllerTest {
     void 후기가_500자를_넘으면_400() throws Exception {
         String longComment = "가".repeat(501);
 
-        mockMvc.perform(patch("/members/1/ratings/4").header(HttpHeaders.AUTHORIZATION, bearer(1L))
+        mockMvc.perform(patch("/ratings/4")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"score\": 4, \"comment\": \"" + longComment + "\"}"))
                 .andExpect(status().isBadRequest())
@@ -93,35 +113,48 @@ class RatingCommandControllerTest {
     }
 
     @Test
-    void 평점을_수정하면_200과_성공_응답을_돌려준다() throws Exception {
-        mockMvc.perform(patch("/members/1/ratings/4").header(HttpHeaders.AUTHORIZATION, bearer(1L))
+    void 평점을_수정하면_200과_수정된_평점을_응답한다() throws Exception {
+        given(ratingService.update(eq(1L), eq(4L), any(UpdateRatingRequest.class)))
+                .willReturn(new RatingResponse(4L, 680L, 4, "다시 보니 괜찮아요", NOW, NOW.plusHours(1)));
+
+        mockMvc.perform(patch("/ratings/4")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"score\": 4, \"comment\": \"다시 보니 괜찮아요\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value("COMMON200"))
-                .andExpect(jsonPath("$.message").value("평점 수정에 성공했습니다."));
-
-        verify(ratingService).update(eq(4L), eq(1L), any(UpdateRatingRequest.class));
+                .andExpect(jsonPath("$.message").value("평점 수정에 성공했습니다."))
+                .andExpect(jsonPath("$.result.score").value(4))
+                .andExpect(jsonPath("$.result.updatedAt").value("2026-11-09T13:00:00"));
     }
 
     @Test
-    void 평점을_삭제하면_본문_없이_204를_응답한다() throws Exception {
+    void 평점을_삭제하면_204가_아니라_200과_공통_형식으로_응답한다() throws Exception {
+        mockMvc.perform(delete("/ratings/4").header(HttpHeaders.AUTHORIZATION, bearer(1L)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.isSuccess").value(true))
+                .andExpect(jsonPath("$.code").value("COMMON200"))
+                .andExpect(jsonPath("$.message").value("평점 삭제에 성공했습니다."))
+                .andExpect(jsonPath("$.result").isEmpty());
+
+        verify(ratingService).delete(1L, 4L);
+    }
+
+    @Test
+    void 평점_등록_수정_삭제는_토큰이_없으면_401() throws Exception {
+        mockMvc.perform(post("/ratings").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"movieId\": 680, \"score\": 5}"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(patch("/ratings/4").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"score\": 4}"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(delete("/ratings/4"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void 예전_경로는_더_이상_없다() throws Exception {
         mockMvc.perform(delete("/members/1/ratings/4").header(HttpHeaders.AUTHORIZATION, bearer(1L)))
-                .andExpect(status().isNoContent())
-                .andExpect(content().string(""));
-
-        verify(ratingService).delete(4L, 1L);
-    }
-
-    @Test
-    void 다른_회원의_평점을_삭제하려_하면_403을_공통_형식으로_응답한다() throws Exception {
-        willThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "본인이 작성한 평점만 수정하거나 삭제할 수 있습니다."))
-                .given(ratingService).delete(4L, 2L);
-
-        mockMvc.perform(delete("/members/2/ratings/4").header(HttpHeaders.AUTHORIZATION, bearer(2L)))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.isSuccess").value(false))
-                .andExpect(jsonPath("$.code").value("COMMON403"))
-                .andExpect(jsonPath("$.message").value("본인이 작성한 평점만 수정하거나 삭제할 수 있습니다."));
+                .andExpect(status().isNotFound());
     }
 }

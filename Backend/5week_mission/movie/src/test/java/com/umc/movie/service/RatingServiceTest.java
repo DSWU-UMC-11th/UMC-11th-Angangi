@@ -1,6 +1,7 @@
 package com.umc.movie.service;
 
 import com.umc.movie.dto.CreateRatingRequest;
+import com.umc.movie.dto.RatingResponse;
 import com.umc.movie.dto.UpdateRatingRequest;
 import com.umc.movie.entity.Member;
 import com.umc.movie.entity.Rating;
@@ -10,9 +11,7 @@ import com.umc.movie.repository.MemberRepository;
 import com.umc.movie.repository.RatingRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
 
@@ -20,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -51,16 +51,14 @@ class RatingServiceTest {
         return rating;
     }
 
-    private static void assertStatus(Runnable action, HttpStatus status, String reason) {
+    private static void assertErrorCode(Runnable action, ErrorCode errorCode) {
         assertThatThrownBy(action::run)
-                .isInstanceOfSatisfying(ResponseStatusException.class, exception -> {
-                    assertThat(exception.getStatusCode()).isEqualTo(status);
-                    assertThat(exception.getReason()).isEqualTo(reason);
-                });
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(errorCode));
     }
 
     @Test
-    void 평점을_등록하면_저장된_평점_ID를_돌려준다() {
+    void 평점을_등록하면_저장된_평점을_돌려준다() {
         given(memberRepository.findById(OWNER_ID)).willReturn(Optional.of(owner));
         given(ratingRepository.save(any(Rating.class))).willAnswer(invocation -> {
             Rating saved = invocation.getArgument(0);
@@ -68,17 +66,26 @@ class RatingServiceTest {
             return saved;
         });
 
-        Long ratingId = ratingService.create(OWNER_ID, new CreateRatingRequest(550L, 5, "최고"));
+        RatingResponse response = ratingService.create(OWNER_ID, new CreateRatingRequest(550L, 5, "최고"));
 
-        assertThat(ratingId).isEqualTo(RATING_ID);
+        assertThat(response.ratingId()).isEqualTo(RATING_ID);
+        assertThat(response.movieId()).isEqualTo(550L);
+        assertThat(response.score()).isEqualTo(5);
     }
 
     @Test
-    void 존재하지_않는_회원이면_404() {
+    void 토큰의_회원이_없으면_MEMBER404_1() {
         given(memberRepository.findById(999L)).willReturn(Optional.empty());
 
-        assertStatus(() -> ratingService.create(999L, new CreateRatingRequest(550L, 5, null)),
-                HttpStatus.NOT_FOUND, "존재하지 않는 유저입니다.");
+        assertErrorCode(() -> ratingService.create(999L, new CreateRatingRequest(550L, 5, null)),
+                ErrorCode.MEMBER_NOT_FOUND);
+    }
+
+    @Test
+    void 공개_목록_조회도_없는_회원이면_MEMBER404_1() {
+        given(memberRepository.existsById(999L)).willReturn(false);
+
+        assertErrorCode(() -> ratingService.getRatingsByMember(999L, 0, 10), ErrorCode.MEMBER_NOT_FOUND);
     }
 
     @Test
@@ -86,51 +93,53 @@ class RatingServiceTest {
         given(memberRepository.findById(OWNER_ID)).willReturn(Optional.of(owner));
         given(ratingRepository.existsByMember_MemberIdAndMovieId(OWNER_ID, 550L)).willReturn(true);
 
-        assertThatThrownBy(() -> ratingService.create(OWNER_ID, new CreateRatingRequest(550L, 5, null)))
-                .isInstanceOfSatisfying(BusinessException.class,
-                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.RATING_DUPLICATED));
+        assertErrorCode(() -> ratingService.create(OWNER_ID, new CreateRatingRequest(550L, 5, null)),
+                ErrorCode.RATING_DUPLICATED);
         verify(ratingRepository, never()).save(any());
     }
 
     @Test
-    void 본인_평점을_수정하면_엔티티의_필드가_바뀐다() {
+    void 본인_평점을_수정하면_flush한_뒤_바뀐_값을_돌려준다() {
         Rating rating = ownersRating();
         given(ratingRepository.findById(RATING_ID)).willReturn(Optional.of(rating));
 
-        ratingService.update(RATING_ID, OWNER_ID, new UpdateRatingRequest(5, "다시 보니 명작"));
+        RatingResponse response = ratingService.update(OWNER_ID, RATING_ID, new UpdateRatingRequest(5, "다시 보니 명작"));
 
         assertThat(rating.getScore()).isEqualTo(5);
-        assertThat(rating.getComment()).isEqualTo("다시 보니 명작");
+        assertThat(response.comment()).isEqualTo("다시 보니 명작");
         verify(ratingRepository, never()).save(any());
+        verify(ratingRepository).flush();
     }
 
     @Test
-    void 다른_회원의_평점을_수정하거나_삭제하면_403() {
+    void 다른_회원의_평점을_수정하거나_삭제하면_RATING403_1() {
         given(ratingRepository.findById(RATING_ID)).willReturn(Optional.of(ownersRating()));
-        String reason = "본인이 작성한 평점만 수정하거나 삭제할 수 있습니다.";
 
-        assertStatus(() -> ratingService.update(RATING_ID, OTHER_ID, new UpdateRatingRequest(1, null)),
-                HttpStatus.FORBIDDEN, reason);
-        assertStatus(() -> ratingService.delete(RATING_ID, OTHER_ID), HttpStatus.FORBIDDEN, reason);
+        assertErrorCode(() -> ratingService.update(OTHER_ID, RATING_ID, new UpdateRatingRequest(1, null)),
+                ErrorCode.RATING_FORBIDDEN);
+        assertErrorCode(() -> ratingService.delete(OTHER_ID, RATING_ID), ErrorCode.RATING_FORBIDDEN);
         verify(ratingRepository, never()).delete(any());
     }
 
     @Test
-    void 존재하지_않는_평점을_수정하거나_삭제하면_404() {
+    void 없는_평점은_주인을_따지기_전에_RATING404_1() {
         given(ratingRepository.findById(999L)).willReturn(Optional.empty());
 
-        assertStatus(() -> ratingService.update(999L, OWNER_ID, new UpdateRatingRequest(1, null)),
-                HttpStatus.NOT_FOUND, "존재하지 않는 평점입니다.");
-        assertStatus(() -> ratingService.delete(999L, OWNER_ID), HttpStatus.NOT_FOUND, "존재하지 않는 평점입니다.");
+        // 남의 회원 번호로 요청해도 403이 아니라 404예요. 없는 것에 "권한 없음"이라고 답하지 않아요
+        assertErrorCode(() -> ratingService.update(OTHER_ID, 999L, new UpdateRatingRequest(1, null)),
+                ErrorCode.RATING_NOT_FOUND);
+        assertErrorCode(() -> ratingService.delete(OWNER_ID, 999L), ErrorCode.RATING_NOT_FOUND);
     }
 
     @Test
-    void 본인_평점을_삭제하면_삭제를_요청한다() {
+    void 본인_평점을_삭제하면_찾은_뒤_삭제한다() {
         Rating rating = ownersRating();
         given(ratingRepository.findById(RATING_ID)).willReturn(Optional.of(rating));
 
-        ratingService.delete(RATING_ID, OWNER_ID);
+        ratingService.delete(OWNER_ID, RATING_ID);
 
-        verify(ratingRepository).delete(rating);
+        var order = inOrder(ratingRepository);
+        order.verify(ratingRepository).findById(RATING_ID);
+        order.verify(ratingRepository).delete(rating);
     }
 }

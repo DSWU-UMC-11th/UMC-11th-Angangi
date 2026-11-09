@@ -31,8 +31,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest({MemberController.class, RatingController.class})
 class AuthInterceptorTest {
 
-    // 6주차 경로 그대로인 평점 삭제를 "잠긴 API" 예시로 써요 (실습 5에서 /ratings/{id}로 바뀌어요)
-    private static final String PROTECTED_URL = "/members/1/ratings/4";
+    // 평점 삭제를 "잠긴 API" 예시로 써요
+    private static final String PROTECTED_URL = "/ratings/4";
 
     @Autowired
     private MockMvc mockMvc;

@@ -2,16 +2,16 @@ package com.umc.movie.controller;
 
 import com.umc.movie.dto.RatingPageResponse;
 import com.umc.movie.dto.RatingResponse;
+import com.umc.movie.exception.BusinessException;
+import com.umc.movie.exception.ErrorCode;
 import com.umc.movie.service.RatingService;
 import com.umc.movie.util.JwtUtil;
 import org.springframework.context.annotation.Import;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -83,9 +83,11 @@ class RatingControllerTest {
     @Test
     void 존재하지_않는_회원이면_404를_응답한다() throws Exception {
         given(ratingService.getRatingsByMember(999L, 0, 10))
-                .willThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 유저입니다."));
+                .willThrow(new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
+        // 공개 API라 토큰 없이 불러도 401이 아니라 404예요
         mockMvc.perform(get("/members/{memberId}/ratings", 999))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("MEMBER404_1"));
     }
 }
