@@ -1,8 +1,13 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link, useMatchRoute } from "@tanstack/react-router";
+import { memberQueries } from "../api/members/member-queries";
+import { useAuthStore } from "../stores/auth-store";
 import { cn } from "../utils/cn";
 
 const navLinkClassName =
   "text-sm font-medium text-(--color-text-secondary) no-underline hover:text-(--color-text-primary)";
+const primaryLinkClassName =
+  "flex h-10 items-center rounded-md bg-(--color-action-primary) px-4 text-sm font-bold text-(--color-bg-surface) no-underline hover:bg-(--color-action-hover) active:bg-(--color-action-pressed)";
 const activeNavLinkClassName =
   "font-bold text-(--color-text-primary) underline decoration-[1.5px] underline-offset-[6px] hover:text-(--color-text-primary)";
 
@@ -15,6 +20,13 @@ export default function Header() {
   const isSearchActive = Boolean(matchRoute({ to: "/search" }));
   // /my/edit, /my/ratings에서도 "내 정보" 메뉴를 활성화해요
   const isMyActive = Boolean(matchRoute({ to: "/my", fuzzy: true }));
+
+  const accessToken = useAuthStore((state) => state.accessToken);
+  // 토큰이 있을 때만 조회해요. 토큰이 유효한지는 이 요청의 응답(401)으로 확인해요
+  const meQuery = useQuery({
+    ...memberQueries.me(),
+    enabled: Boolean(accessToken),
+  });
 
   return (
     <header className="border-b border-(--color-border-default) bg-(--color-bg-surface)">
@@ -54,18 +66,29 @@ export default function Header() {
           >
             <img src="/icons/movie-icons/search.svg" alt="" />
           </Link>
-          <Link
-            className="flex h-10 items-center rounded-md border border-(--color-border-default) bg-(--color-bg-surface) px-4 text-sm font-bold text-(--color-text-primary) no-underline hover:bg-(--color-bg-page)"
-            to="/signup"
-          >
-            회원가입
-          </Link>
-          <Link
-            className="flex h-10 items-center rounded-md bg-(--color-action-primary) px-4 text-sm font-bold text-(--color-bg-surface) no-underline hover:bg-(--color-action-hover) active:bg-(--color-action-pressed)"
-            to="/login"
-          >
-            로그인
-          </Link>
+          {!accessToken ? (
+            <>
+              <Link
+                className="flex h-10 items-center rounded-md border border-(--color-border-default) bg-(--color-bg-surface) px-4 text-sm font-bold text-(--color-text-primary) no-underline hover:bg-(--color-bg-page)"
+                to="/signup"
+              >
+                회원가입
+              </Link>
+              <Link className={primaryLinkClassName} to="/login">
+                로그인
+              </Link>
+            </>
+          ) : meQuery.isLoading ? (
+            // enabled가 꺼져 있어도 isPending은 참이라, 실제 첫 요청 중인지는 isLoading으로 봐요
+            <span
+              className="h-10 w-24 animate-pulse rounded-md bg-(--color-border-default)"
+              aria-label="내 정보를 불러오는 중"
+            />
+          ) : (
+            <Link className={primaryLinkClassName} to="/my">
+              마이페이지
+            </Link>
+          )}
         </div>
       </div>
     </header>
