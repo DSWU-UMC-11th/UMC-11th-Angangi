@@ -74,7 +74,7 @@ export function MovieListPage({ currentPage }: MovieListPageProps) {
     <main className="page-container flex-1 pt-8 pb-20">
       <div className="mb-6 flex items-center justify-between gap-4">
         <h1 className="text-[28px] font-extrabold tracking-[-0.02em] min-[481px]:text-4xl">
-          영화 목록
+          지금 인기 있는 영화
         </h1>
         <select
           className="h-10 rounded-md border border-(--color-border-default) bg-(--color-bg-surface) px-3 text-sm font-medium text-(--color-text-primary)"
